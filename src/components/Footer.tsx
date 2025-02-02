@@ -1,4 +1,4 @@
-import { Github, Twitter, Discord } from "lucide-react";
+import { Github, Twitter } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -45,13 +45,6 @@ const Footer = () => {
                 aria-label="Twitter"
               >
                 <Twitter className="w-5 h-5 text-arbisent-text" />
-              </a>
-              <a
-                href="#"
-                className="p-2 rounded-full bg-arbisent-primary/10 hover:bg-arbisent-primary/20 transition-colors"
-                aria-label="Discord"
-              >
-                <Discord className="w-5 h-5 text-arbisent-text" />
               </a>
               <a
                 href="#"
