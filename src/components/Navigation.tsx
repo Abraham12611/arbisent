@@ -1,8 +1,38 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      toast.success("Successfully logged out!");
+      navigate("/");
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
 
   return (
     <nav className="fixed w-full bg-black/20 backdrop-blur-lg z-50">
@@ -21,9 +51,29 @@ const Navigation = () => {
               <a href="#about" className="text-arbisent-text hover:text-arbisent-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">
                 About
               </a>
-              <button className="bg-arbisent-accent text-arbisent-text px-4 py-2 rounded-md text-sm font-medium hover:bg-opacity-90 transition-colors">
-                Launch App
-              </button>
+              {user ? (
+                <>
+                  <button
+                    onClick={() => navigate("/dashboard")}
+                    className="bg-arbisent-accent text-arbisent-text px-4 py-2 rounded-md text-sm font-medium hover:bg-opacity-90 transition-colors"
+                  >
+                    Dashboard
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="text-arbisent-text hover:text-arbisent-primary px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => navigate("/auth")}
+                  className="bg-arbisent-accent text-arbisent-text px-4 py-2 rounded-md text-sm font-medium hover:bg-opacity-90 transition-colors"
+                >
+                  Launch App
+                </button>
+              )}
             </div>
           </div>
           <div className="md:hidden">
@@ -47,9 +97,29 @@ const Navigation = () => {
             <a href="#about" className="text-arbisent-text hover:text-arbisent-primary block px-3 py-2 rounded-md text-base font-medium">
               About
             </a>
-            <button className="w-full text-left bg-arbisent-accent text-arbisent-text px-3 py-2 rounded-md text-base font-medium hover:bg-opacity-90">
-              Launch App
-            </button>
+            {user ? (
+              <>
+                <button
+                  onClick={() => navigate("/dashboard")}
+                  className="w-full text-left bg-arbisent-accent text-arbisent-text px-3 py-2 rounded-md text-base font-medium hover:bg-opacity-90"
+                >
+                  Dashboard
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left text-arbisent-text hover:text-arbisent-primary block px-3 py-2 rounded-md text-base font-medium"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => navigate("/auth")}
+                className="w-full text-left bg-arbisent-accent text-arbisent-text px-3 py-2 rounded-md text-base font-medium hover:bg-opacity-90"
+              >
+                Launch App
+              </button>
+            )}
           </div>
         </div>
       )}
