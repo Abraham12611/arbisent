@@ -7,10 +7,12 @@ const Hero = () => {
 
   const handleGetStarted = async () => {
     try {
+      // Handle the get started action
       if (!prompt.trim()) {
         toast.error("Please enter a trading prompt first");
         return;
       }
+      // Future wallet connection or other actions can go here
       toast.success("Processing your request...");
     } catch (error: any) {
       if (error.message?.includes("rejected")) {
@@ -31,7 +33,7 @@ const Hero = () => {
   ];
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black to-arbisent-primary/20 mt-16">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black to-arbisent-primary/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         {/* Top Section with Text and Floating Logos */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
