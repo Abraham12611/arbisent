@@ -50,6 +50,7 @@ export type Database = {
           trading_preferences: Json | null
           updated_at: string
           username: string | null
+          wallet_addresses: Json | null
         }
         Insert: {
           avatar_url?: string | null
@@ -58,6 +59,7 @@ export type Database = {
           trading_preferences?: Json | null
           updated_at?: string
           username?: string | null
+          wallet_addresses?: Json | null
         }
         Update: {
           avatar_url?: string | null
@@ -66,6 +68,7 @@ export type Database = {
           trading_preferences?: Json | null
           updated_at?: string
           username?: string | null
+          wallet_addresses?: Json | null
         }
         Relationships: []
       }

@@ -20,7 +20,8 @@ import {
   Bell,
   Wallet,
   LogOut,
-  UserCog
+  UserCog,
+  WalletCards
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -30,10 +31,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { WalletConnector } from "./WalletConnector";
 
 const menuItems = [
   {
@@ -75,6 +83,7 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children, onViewChange }: DashboardLayoutProps) {
   const [activeItem, setActiveItem] = useState("Overview");
+  const [showWalletDialog, setShowWalletDialog] = useState(false);
   const navigate = useNavigate();
 
   const handleMenuClick = (title: string, url: string) => {
@@ -147,6 +156,13 @@ export function DashboardLayout({ children, onViewChange }: DashboardLayoutProps
                     <UserCog className="mr-2 h-4 w-4" />
                     <span>Profile Settings</span>
                   </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => setShowWalletDialog(true)} 
+                    className="cursor-pointer"
+                  >
+                    <WalletCards className="mr-2 h-4 w-4" />
+                    <span>Connect Wallets</span>
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
@@ -160,6 +176,15 @@ export function DashboardLayout({ children, onViewChange }: DashboardLayoutProps
           </main>
         </div>
       </div>
+
+      <Dialog open={showWalletDialog} onOpenChange={setShowWalletDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Connect Your Wallets</DialogTitle>
+          </DialogHeader>
+          <WalletConnector onClose={() => setShowWalletDialog(false)} />
+        </DialogContent>
+      </Dialog>
     </SidebarProvider>
   );
 }
