@@ -1,7 +1,17 @@
+import { useState } from "react";
 import { TradeHistory } from "./TradeHistory";
 import { PerformanceAnalytics } from "./PerformanceAnalytics";
+import { FilterControls } from "./FilterControls";
 
 export const HistoryView = () => {
+  const [filters, setFilters] = useState<{
+    dateRange?: { from: Date; to: Date };
+    pair?: string;
+    type?: string;
+    status?: string;
+    profitRange?: { min: number; max: number };
+  }>({});
+
   return (
     <div className="space-y-8">
       <div>
@@ -11,10 +21,12 @@ export const HistoryView = () => {
         </p>
       </div>
 
-      <PerformanceAnalytics />
+      <FilterControls onFiltersChange={setFilters} />
+      
+      <PerformanceAnalytics dateRange={filters.dateRange} />
       
       <div className="mt-8">
-        <TradeHistory />
+        <TradeHistory filters={filters} />
       </div>
     </div>
   );

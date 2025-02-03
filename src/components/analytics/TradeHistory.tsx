@@ -29,22 +29,30 @@ import { supabase } from "@/integrations/supabase/client";
 import { Trade } from "@/types/trade";
 import { cn } from "@/lib/utils";
 
-const ITEMS_PER_PAGE = 10;
-
 type SortField = "created_at" | "pair_name" | "type" | "side" | "entry_price" | "exit_price" | "amount" | "profit_loss" | "status";
 type SortOrder = "asc" | "desc";
 
-export const TradeHistory = () => {
+interface TradeHistoryProps {
+  filters?: {
+    dateRange?: { from: Date; to: Date };
+    pair?: string;
+    type?: string;
+    status?: string;
+    profitRange?: { min: number; max: number };
+  };
+}
+
+const ITEMS_PER_PAGE = 10;
+
+export const TradeHistory = ({ filters }: TradeHistoryProps) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState<SortField>("created_at");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const { data: trades, isLoading } = useQuery({
-    queryKey: ["trades", currentPage, search, sortField, sortOrder, statusFilter],
+    queryKey: ["trades", currentPage, sortField, sortOrder, filters],
     queryFn: async () => {
-      console.log("Fetching trades with filters:", { currentPage, search, sortField, sortOrder, statusFilter });
+      console.log("Fetching trades with filters:", { currentPage, sortField, sortOrder, filters });
       
       let query = supabase
         .from("trades")
@@ -52,12 +60,30 @@ export const TradeHistory = () => {
         .order(sortField, { ascending: sortOrder === "asc" })
         .range((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE - 1);
 
-      if (search) {
-        query = query.ilike("pair_name", `%${search}%`);
+      if (filters?.dateRange?.from && filters?.dateRange?.to) {
+        query = query
+          .gte("created_at", filters.dateRange.from.toISOString())
+          .lte("created_at", filters.dateRange.to.toISOString());
       }
 
-      if (statusFilter !== "all") {
-        query = query.eq("status", statusFilter);
+      if (filters?.pair) {
+        query = query.ilike("pair_name", `%${filters.pair}%`);
+      }
+
+      if (filters?.type) {
+        query = query.eq("type", filters.type);
+      }
+
+      if (filters?.status) {
+        query = query.eq("status", filters.status);
+      }
+
+      if (filters?.profitRange?.min !== undefined) {
+        query = query.gte("profit_loss", filters.profitRange.min);
+      }
+
+      if (filters?.profitRange?.max !== undefined) {
+        query = query.lte("profit_loss", filters.profitRange.max);
       }
 
       const { data, error, count } = await query;
@@ -109,29 +135,6 @@ export const TradeHistory = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <Input
-          placeholder="Search by pair name..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
-        />
-        <Select
-          value={statusFilter}
-          onValueChange={setStatusFilter}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="Open">Open</SelectItem>
-            <SelectItem value="Closed">Closed</SelectItem>
-            <SelectItem value="Cancelled">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -192,9 +195,12 @@ export const TradeHistory = () => {
         <Pagination>
           <PaginationContent>
             <PaginationItem>
-              <PaginationPrevious 
+              <PaginationPrevious
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
+                className={cn(
+                  "cursor-pointer",
+                  currentPage === 1 && "pointer-events-none opacity-50"
+                )}
               />
             </PaginationItem>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
@@ -202,6 +208,7 @@ export const TradeHistory = () => {
                 <PaginationLink
                   onClick={() => setCurrentPage(page)}
                   isActive={currentPage === page}
+                  className="cursor-pointer"
                 >
                   {page}
                 </PaginationLink>
@@ -210,7 +217,10 @@ export const TradeHistory = () => {
             <PaginationItem>
               <PaginationNext
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
+                className={cn(
+                  "cursor-pointer",
+                  currentPage === totalPages && "pointer-events-none opacity-50"
+                )}
               />
             </PaginationItem>
           </PaginationContent>
