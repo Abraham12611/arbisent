@@ -77,7 +77,16 @@ const PriceDashboard = () => {
 
   const addToWatchlist = async (coin: CoinData) => {
     try {
+      // Get the current user's session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        toast.error("Please login to add to watchlist");
+        return;
+      }
+
       const { error } = await supabase.from("watched_pairs").insert({
+        user_id: session.user.id, // Add the user_id field
         pair_name: coin.symbol.toUpperCase() + "/USD",
         pair_address: coin.id,
         dex_name: "CoinGecko",
