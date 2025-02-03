@@ -13,11 +13,10 @@ import type { ProfileFormValues } from "@/types/preferences";
 
 interface AvatarSectionProps {
   control: Control<ProfileFormValues>;
-  onAvatarChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   username: string;
 }
 
-export function AvatarSection({ control, onAvatarChange, username }: AvatarSectionProps) {
+export function AvatarSection({ control, username }: AvatarSectionProps) {
   return (
     <FormField
       control={control}
@@ -37,7 +36,7 @@ export function AvatarSection({ control, onAvatarChange, username }: AvatarSecti
                 <Input
                   type="file"
                   accept="image/*"
-                  onChange={onAvatarChange}
+                  onChange={field.onChange}
                   className="w-full"
                 />
                 <FormDescription>

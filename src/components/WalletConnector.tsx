@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import type { WalletAddresses } from "@/types/preferences";
 
 interface WalletConnectorProps {
   onClose?: () => void;
@@ -27,16 +28,19 @@ export function WalletConnector({ onClose }: WalletConnectorProps) {
         .eq('id', (await supabase.auth.getUser()).data.user?.id)
         .single();
 
-      const isFirstWallet = !profile?.wallet_addresses || Object.keys(profile.wallet_addresses).length === 0;
+      const walletAddresses = (profile?.wallet_addresses || {}) as WalletAddresses;
+      const isFirstWallet = !walletAddresses || Object.keys(walletAddresses).length === 0;
       
-      const { error } = await supabase.from('profiles').update({
-        wallet_addresses: {
-          ...profile?.wallet_addresses,
-          phantom: {
-            address: walletAddress,
-            isDefault: isFirstWallet
-          }
+      const updatedWalletAddresses: WalletAddresses = {
+        ...walletAddresses,
+        phantom: {
+          address: walletAddress,
+          isDefault: isFirstWallet
         }
+      };
+
+      const { error } = await supabase.from('profiles').update({
+        wallet_addresses: updatedWalletAddresses
       }).eq('id', (await supabase.auth.getUser()).data.user?.id);
 
       if (error) throw error;
@@ -70,16 +74,19 @@ export function WalletConnector({ onClose }: WalletConnectorProps) {
         .eq('id', (await supabase.auth.getUser()).data.user?.id)
         .single();
 
-      const isFirstWallet = !profile?.wallet_addresses || Object.keys(profile.wallet_addresses).length === 0;
+      const walletAddresses = (profile?.wallet_addresses || {}) as WalletAddresses;
+      const isFirstWallet = !walletAddresses || Object.keys(walletAddresses).length === 0;
+
+      const updatedWalletAddresses: WalletAddresses = {
+        ...walletAddresses,
+        metamask: {
+          address: walletAddress,
+          isDefault: isFirstWallet
+        }
+      };
 
       const { error } = await supabase.from('profiles').update({
-        wallet_addresses: {
-          ...profile?.wallet_addresses,
-          metamask: {
-            address: walletAddress,
-            isDefault: isFirstWallet
-          }
-        }
+        wallet_addresses: updatedWalletAddresses
       }).eq('id', (await supabase.auth.getUser()).data.user?.id);
 
       if (error) throw error;

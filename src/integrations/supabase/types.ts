@@ -48,6 +48,7 @@ export type Database = {
           created_at: string
           email_preferences: Json | null
           id: string
+          privacy_settings: Json | null
           trading_preferences: Json | null
           updated_at: string
           username: string | null
@@ -58,6 +59,7 @@ export type Database = {
           created_at?: string
           email_preferences?: Json | null
           id: string
+          privacy_settings?: Json | null
           trading_preferences?: Json | null
           updated_at?: string
           username?: string | null
@@ -68,6 +70,7 @@ export type Database = {
           created_at?: string
           email_preferences?: Json | null
           id?: string
+          privacy_settings?: Json | null
           trading_preferences?: Json | null
           updated_at?: string
           username?: string | null

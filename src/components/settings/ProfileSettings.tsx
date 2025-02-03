@@ -11,7 +11,7 @@ import { EmailPreferencesSection } from "./profile/EmailPreferencesSection";
 import { ConnectedWallets } from "./wallet/ConnectedWallets";
 import { DataExportSection } from "./data/DataExportSection";
 import { PrivacySection } from "./privacy/PrivacySection";
-import type { ProfileFormValues } from "@/types/preferences";
+import type { ProfileFormValues, EmailPreferences } from "@/types/preferences";
 
 const profileFormSchema = z.object({
   username: z.string().min(2).max(30),
@@ -38,10 +38,16 @@ export function ProfileSettings() {
 
       if (!profile) throw new Error("No profile found");
 
+      const emailPreferences = profile.email_preferences as EmailPreferences;
+
       return {
         username: profile.username || "",
         avatar_url: profile.avatar_url || "",
-        email_preferences: profile.email_preferences as ProfileFormValues["email_preferences"],
+        email_preferences: emailPreferences || {
+          marketing: false,
+          trade_alerts: true,
+          security_notifications: true,
+        },
       };
     },
   });
@@ -72,8 +78,8 @@ export function ProfileSettings() {
     <div className="space-y-8">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <AvatarSection form={form} />
-          <EmailPreferencesSection form={form} />
+          <AvatarSection control={form.control} username={form.getValues("username")} />
+          <EmailPreferencesSection control={form.control} />
           <Button type="submit">Update Profile</Button>
         </form>
       </Form>

@@ -18,6 +18,22 @@ export interface EmailPreferences {
   security_notifications: boolean;
 }
 
+export interface WalletAddress {
+  address: string;
+  isDefault: boolean;
+}
+
+export interface WalletAddresses {
+  phantom?: WalletAddress;
+  metamask?: WalletAddress;
+}
+
+export interface PrivacySettings {
+  share_trading_analytics: boolean;
+  collect_usage_data: boolean;
+  public_profile: boolean;
+}
+
 export interface ProfileFormValues {
   username: string;
   avatar_url: string;
