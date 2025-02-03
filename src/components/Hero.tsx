@@ -1,4 +1,4 @@
-import { ArrowRight, ShoppingBag, Edit, AlarmClock, Dumbbell, Robot } from "lucide-react";
+import { ArrowRight, ShoppingBag, Edit, AlarmClock, Dumbbell, Bot } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -29,7 +29,7 @@ const Hero = () => {
     { icon: Edit, label: "Personal blog" },
     { icon: AlarmClock, label: "Waitlist site" },
     { icon: Dumbbell, label: "Workout tracker" },
-    { icon: Robot, label: "AI debate app" },
+    { icon: Bot, label: "AI debate app" },
   ];
 
   return (
