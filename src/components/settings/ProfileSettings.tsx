@@ -9,6 +9,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { AvatarSection } from "./profile/AvatarSection";
 import { EmailPreferencesSection } from "./profile/EmailPreferencesSection";
 import { ConnectedWallets } from "./wallet/ConnectedWallets";
+import { DataExportSection } from "./data/DataExportSection";
+import { PrivacySection } from "./privacy/PrivacySection";
+import type { ProfileFormValues } from "@/types/preferences";
 
 const profileFormSchema = z.object({
   username: z.string().min(2).max(30),
@@ -19,8 +22,6 @@ const profileFormSchema = z.object({
     security_notifications: z.boolean(),
   }),
 });
-
-type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export function ProfileSettings() {
   const form = useForm<ProfileFormValues>({
@@ -78,6 +79,8 @@ export function ProfileSettings() {
       </Form>
       
       <ConnectedWallets />
+      <PrivacySection />
+      <DataExportSection />
     </div>
   );
 }
