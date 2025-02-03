@@ -105,7 +105,17 @@ export const CoinList = () => {
           <CoinTableHeader onSort={handleSort} sortConfig={sortConfig} />
           <tbody>
             {filteredAndSortedData.map((coin) => (
-              <CoinRow key={coin.id} coin={coin} />
+              <CoinRow
+                key={coin.id}
+                coin={{
+                  name: coin.name,
+                  symbol: coin.symbol,
+                  price: coin.current_price,
+                  marketCap: coin.market_cap,
+                  volume24h: coin.total_volume,
+                  priceChange24h: coin.price_change_percentage_24h || 0,
+                }}
+              />
             ))}
           </tbody>
         </table>
