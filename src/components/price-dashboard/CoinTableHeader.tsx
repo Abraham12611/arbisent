@@ -8,7 +8,7 @@ interface CoinTableHeaderProps {
 
 export const CoinTableHeader = ({ onSort, sortConfig }: CoinTableHeaderProps) => {
   const renderSortIcon = (key: string) => {
-    if (sortConfig.key === key) {
+    if (sortConfig && sortConfig.key === key) {
       return (
         <ArrowUpDown
           className={`inline-block ml-1 h-4 w-4 transition-transform ${
