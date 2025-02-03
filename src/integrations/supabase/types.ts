@@ -81,6 +81,8 @@ export type Database = {
           profit_loss: number | null
           side: string
           status: string
+          stop_loss: number | null
+          take_profit: number | null
           type: string
           user_id: string | null
         }
@@ -95,6 +97,8 @@ export type Database = {
           profit_loss?: number | null
           side: string
           status?: string
+          stop_loss?: number | null
+          take_profit?: number | null
           type: string
           user_id?: string | null
         }
@@ -109,6 +113,8 @@ export type Database = {
           profit_loss?: number | null
           side?: string
           status?: string
+          stop_loss?: number | null
+          take_profit?: number | null
           type?: string
           user_id?: string | null
         }
