@@ -35,6 +35,9 @@ export const CoinTableHeader = ({ onSort, sortConfig }: CoinTableHeaderProps) =>
         <th className="px-6 py-3 cursor-pointer" onClick={() => onSort("price_change_percentage_7d_in_currency")}>
           7d Change {renderSortIcon("price_change_percentage_7d_in_currency")}
         </th>
+        <th className="px-6 py-3">
+          7d Chart
+        </th>
         <th className="px-6 py-3 cursor-pointer" onClick={() => onSort("market_cap")}>
           Market Cap {renderSortIcon("market_cap")}
         </th>

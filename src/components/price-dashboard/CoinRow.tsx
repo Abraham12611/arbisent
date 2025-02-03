@@ -1,6 +1,7 @@
-import { TrendingUp, TrendingDown, Plus } from "lucide-react";
+import { TrendingUp, TrendingDown, Plus, Volume2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Area, AreaChart, ResponsiveContainer } from "recharts";
 
 interface CoinData {
   id: string;
@@ -12,6 +13,9 @@ interface CoinData {
   price_change_percentage_7d_in_currency: number;
   market_cap: number;
   total_volume: number;
+  sparkline_in_7d: {
+    price: number[];
+  };
 }
 
 interface CoinRowProps {
@@ -57,6 +61,16 @@ export const CoinRow = ({ coin }: CoinRowProps) => {
       toast.error("An error occurred. Please try again later.");
     }
   };
+
+  // Prepare sparkline data
+  const sparklineData = coin.sparkline_in_7d.price.map((price, index) => ({
+    value: price,
+    time: index
+  }));
+
+  // Calculate volume change percentage
+  const volumeToMarketCapRatio = (coin.total_volume / coin.market_cap) * 100;
+  const isHighVolume = volumeToMarketCapRatio > 10; // Consider high volume if > 10% of market cap
 
   return (
     <tr className="border-t border-arbisent-text/10 hover:bg-white/5">
@@ -110,11 +124,26 @@ export const CoinRow = ({ coin }: CoinRowProps) => {
           {Math.abs(coin.price_change_percentage_7d_in_currency).toFixed(2)}%
         </span>
       </td>
+      <td className="px-6 py-4 min-w-[120px] h-[40px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={sparklineData}>
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke={coin.price_change_percentage_7d_in_currency >= 0 ? "#22c55e" : "#ef4444"}
+              fill={coin.price_change_percentage_7d_in_currency >= 0 ? "#22c55e20" : "#ef444420"}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </td>
       <td className="px-6 py-4 text-arbisent-text">
         ${coin.market_cap.toLocaleString()}
       </td>
-      <td className="px-6 py-4 text-arbisent-text">
-        ${coin.total_volume.toLocaleString()}
+      <td className="px-6 py-4">
+        <div className="flex items-center gap-2 text-arbisent-text">
+          <Volume2 className={`w-4 h-4 ${isHighVolume ? "text-green-500" : "text-gray-500"}`} />
+          ${coin.total_volume.toLocaleString()}
+        </div>
       </td>
       <td className="px-6 py-4">
         <button
