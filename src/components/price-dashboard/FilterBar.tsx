@@ -5,7 +5,7 @@ import { debounce } from "lodash";
 import { useCallback } from "react";
 
 interface FilterBarProps {
-  onFilterChange: (filters: PriceFilter) => void;
+  onFilterChange: (filters: PriceFilter | ((prev: PriceFilter) => PriceFilter)) => void;
 }
 
 export const FilterBar = ({ onFilterChange }: FilterBarProps) => {
