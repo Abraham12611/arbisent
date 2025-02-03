@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowUpDown, TrendingUp, AlertCircle } from "lucide-react";
+import { ArrowUpDown, TrendingUp, AlertCircle, BarChart } from "lucide-react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 
 const Dashboard = () => {
@@ -33,14 +33,15 @@ const Dashboard = () => {
         <p className="text-arbisent-text/70 mt-2">Monitor and manage your arbitrage opportunities</p>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      {/* KPI Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="bg-black/40 p-6 rounded-lg border border-arbisent-text/10 backdrop-blur-sm hover:bg-black/50 transition-colors">
           <div className="flex items-center justify-between">
             <h3 className="text-arbisent-text font-medium">Active Opportunities</h3>
             <ArrowUpDown className="text-arbisent-accent" size={20} />
           </div>
           <p className="text-2xl font-bold text-arbisent-text mt-2">12</p>
+          <p className="text-sm text-arbisent-text/70 mt-1">+3 from yesterday</p>
         </div>
         
         <div className="bg-black/40 p-6 rounded-lg border border-arbisent-text/10 backdrop-blur-sm hover:bg-black/50 transition-colors">
@@ -49,6 +50,7 @@ const Dashboard = () => {
             <TrendingUp className="text-green-500" size={20} />
           </div>
           <p className="text-2xl font-bold text-arbisent-text mt-2">$1,234.56</p>
+          <p className="text-sm text-green-500 mt-1">+2.5% increase</p>
         </div>
         
         <div className="bg-black/40 p-6 rounded-lg border border-arbisent-text/10 backdrop-blur-sm hover:bg-black/50 transition-colors">
@@ -57,6 +59,16 @@ const Dashboard = () => {
             <AlertCircle className="text-yellow-500" size={20} />
           </div>
           <p className="text-2xl font-bold text-arbisent-text mt-2">Medium</p>
+          <p className="text-sm text-arbisent-text/70 mt-1">Based on market volatility</p>
+        </div>
+
+        <div className="bg-black/40 p-6 rounded-lg border border-arbisent-text/10 backdrop-blur-sm hover:bg-black/50 transition-colors">
+          <div className="flex items-center justify-between">
+            <h3 className="text-arbisent-text font-medium">Success Rate</h3>
+            <BarChart className="text-arbisent-accent" size={20} />
+          </div>
+          <p className="text-2xl font-bold text-arbisent-text mt-2">94.2%</p>
+          <p className="text-sm text-arbisent-text/70 mt-1">Last 100 trades</p>
         </div>
       </div>
 
