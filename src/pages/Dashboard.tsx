@@ -7,6 +7,7 @@ import { PriceDashboard } from "@/components/PriceDashboard";
 import { AnalyticsView } from "@/components/analytics/AnalyticsView";
 import { ActivePositionsView } from "@/components/trades/ActivePositionsView";
 import { ProfileSettings } from "@/components/settings/ProfileSettings";
+import { TradingPreferences } from "@/components/settings/TradingPreferences";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -49,7 +50,12 @@ const Dashboard = () => {
       case "analytics":
         return <AnalyticsView />;
       case "settings":
-        return <ProfileSettings />;
+        return (
+          <div className="space-y-8">
+            <ProfileSettings />
+            <TradingPreferences />
+          </div>
+        );
       default:
         return null;
     }
