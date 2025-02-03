@@ -6,6 +6,7 @@ import { KPIMetrics } from "@/components/KPIMetrics";
 import { PriceDashboard } from "@/components/PriceDashboard";
 import { AnalyticsView } from "@/components/analytics/AnalyticsView";
 import { ActivePositionsView } from "@/components/trades/ActivePositionsView";
+import { ProfileSettings } from "@/components/settings/ProfileSettings";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -47,6 +48,8 @@ const Dashboard = () => {
         return <ActivePositionsView />;
       case "analytics":
         return <AnalyticsView />;
+      case "settings":
+        return <ProfileSettings />;
       default:
         return null;
     }
