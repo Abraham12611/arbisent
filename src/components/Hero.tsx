@@ -4,11 +4,11 @@ const Hero = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black to-arbisent-primary/20">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h1 className="text-4xl sm:text-6xl font-bold text-arbisent-text mb-6 [text-shadow:_0_2px_2px_rgb(0_0_0_/_30%),_0_4px_8px_rgb(0_0_0_/_20%),_0_8px_16px_rgb(0_0_0_/_10%)]">
+        <h1 className="text-4xl sm:text-6xl font-bold text-arbisent-text mb-6 [text-shadow:_0_1px_3px_rgb(0_0_0_/_50%)]">
           AI-Powered Crypto
-          <span className="text-arbisent-primary [text-shadow:_0_2px_4px_rgb(37_99_235_/_40%),_0_4px_12px_rgb(37_99_235_/_20%),_0_8px_24px_rgb(37_99_235_/_10%)]"> Arbitrage</span>
+          <span className="text-arbisent-primary [text-shadow:_0_1px_5px_rgb(37_99_235_/_30%)]"> Arbitrage</span>
         </h1>
-        <p className="text-xl sm:text-2xl text-arbisent-text/80 mb-12 max-w-2xl mx-auto [text-shadow:_0_1px_2px_rgb(0_0_0_/_30%),_0_2px_4px_rgb(0_0_0_/_20%)]">
+        <p className="text-xl sm:text-2xl text-arbisent-text/80 mb-12 max-w-2xl mx-auto [text-shadow:_0_1px_2px_rgb(0_0_0_/_40%)]">
           Exploit price discrepancies across DEXs with our advanced AI technology and real-time social sentiment analysis.
         </p>
         <div className="relative max-w-xl mx-auto">
