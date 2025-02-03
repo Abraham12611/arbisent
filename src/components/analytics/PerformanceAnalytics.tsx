@@ -16,23 +16,23 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
-export const PerformanceAnalytics = () => {
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | undefined>();
+export const PerformanceAnalytics = ({ dateRange }: { dateRange?: { from: Date; to: Date } }) => {
+  const [dateRangeState, setDateRange] = useState<{ from: Date; to: Date } | undefined>(dateRange);
 
   const { data: performanceData, isLoading } = useQuery({
-    queryKey: ["performance-analytics", dateRange],
+    queryKey: ["performance-analytics", dateRangeState],
     queryFn: async () => {
-      console.log("Fetching performance analytics with date range:", dateRange);
+      console.log("Fetching performance analytics with date range:", dateRangeState);
       
       let query = supabase
         .from("trades")
         .select("*")
         .eq("status", "Closed");
 
-      if (dateRange?.from && dateRange?.to) {
+      if (dateRangeState?.from && dateRangeState?.to) {
         query = query
-          .gte("created_at", dateRange.from.toISOString())
-          .lte("created_at", dateRange.to.toISOString());
+          .gte("created_at", dateRangeState.from.toISOString())
+          .lte("created_at", dateRangeState.to.toISOString());
       }
 
       const { data: trades, error } = await query;
@@ -132,7 +132,7 @@ export const PerformanceAnalytics = () => {
     <div className="space-y-4">
       <div className="flex justify-end">
         <DatePickerWithRange
-          value={dateRange}
+          value={dateRangeState}
           onChange={(value: any) => setDateRange(value)}
         />
       </div>

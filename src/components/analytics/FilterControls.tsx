@@ -165,7 +165,7 @@ export function FilterControls({ onFiltersChange }: FilterControlsProps) {
             <SelectValue placeholder="Trade Type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Types</SelectItem>
+            <SelectItem value="all">All Types</SelectItem>
             <SelectItem value="market">Market</SelectItem>
             <SelectItem value="limit">Limit</SelectItem>
           </SelectContent>
@@ -182,7 +182,7 @@ export function FilterControls({ onFiltersChange }: FilterControlsProps) {
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Status</SelectItem>
+            <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="Open">Open</SelectItem>
             <SelectItem value="Closed">Closed</SelectItem>
             <SelectItem value="Cancelled">Cancelled</SelectItem>
