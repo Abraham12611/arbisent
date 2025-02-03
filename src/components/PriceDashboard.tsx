@@ -19,7 +19,7 @@ interface CoinData {
   };
 }
 
-const PriceDashboard = () => {
+export const PriceDashboard = () => {
   const [watchedPairs, setWatchedPairs] = useState<any[]>([]);
 
   // Fetch crypto data from CoinGecko
@@ -43,7 +43,6 @@ const PriceDashboard = () => {
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  // Subscribe to watched pairs updates
   useEffect(() => {
     const channel = supabase
       .channel("watched_pairs_changes")
@@ -249,5 +248,3 @@ const PriceDashboard = () => {
     </section>
   );
 };
-
-export default PriceDashboard;
