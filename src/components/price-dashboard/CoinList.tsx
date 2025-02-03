@@ -3,6 +3,9 @@ import { toast } from "sonner";
 import { CoinRow } from "./CoinRow";
 import { CoinTableHeader } from "./CoinTableHeader";
 import { LoadingSpinner } from "./LoadingSpinner";
+import { FilterBar } from "./FilterBar";
+import { useState, useMemo } from "react";
+import type { PriceFilter, SortConfig } from "@/types/price-dashboard";
 
 interface CoinData {
   id: string;
@@ -20,6 +23,19 @@ interface CoinData {
 }
 
 export const CoinList = () => {
+  const [filters, setFilters] = useState<PriceFilter>({
+    search: "",
+    minPrice: "",
+    maxPrice: "",
+    minMarketCap: "",
+    maxMarketCap: "",
+  });
+
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    key: "market_cap",
+    direction: "desc",
+  });
+
   const { data: coinData, isLoading } = useQuery({
     queryKey: ["crypto-prices"],
     queryFn: async () => {
@@ -37,23 +53,63 @@ export const CoinList = () => {
         throw error;
       }
     },
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 30000,
   });
+
+  const filteredAndSortedData = useMemo(() => {
+    if (!coinData) return [];
+
+    let filtered = coinData.filter((coin) => {
+      const matchesSearch =
+        coin.name.toLowerCase().includes(filters.search.toLowerCase()) ||
+        coin.symbol.toLowerCase().includes(filters.search.toLowerCase());
+
+      const matchesPrice =
+        (!filters.minPrice || coin.current_price >= parseFloat(filters.minPrice)) &&
+        (!filters.maxPrice || coin.current_price <= parseFloat(filters.maxPrice));
+
+      const matchesMarketCap =
+        (!filters.minMarketCap || coin.market_cap >= parseFloat(filters.minMarketCap)) &&
+        (!filters.maxMarketCap || coin.market_cap <= parseFloat(filters.maxMarketCap));
+
+      return matchesSearch && matchesPrice && matchesMarketCap;
+    });
+
+    return filtered.sort((a, b) => {
+      const aValue = a[sortConfig.key as keyof CoinData];
+      const bValue = b[sortConfig.key as keyof CoinData];
+
+      if (typeof aValue === "number" && typeof bValue === "number") {
+        return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
+      }
+      return 0;
+    });
+  }, [coinData, filters, sortConfig]);
+
+  const handleSort = (key: string) => {
+    setSortConfig((prev) => ({
+      key,
+      direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
+    }));
+  };
 
   if (isLoading) {
     return <LoadingSpinner />;
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <CoinTableHeader />
-        <tbody>
-          {coinData?.map((coin) => (
-            <CoinRow key={coin.id} coin={coin} />
-          ))}
-        </tbody>
-      </table>
+    <div>
+      <FilterBar onFilterChange={setFilters} />
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <CoinTableHeader onSort={handleSort} sortConfig={sortConfig} />
+          <tbody>
+            {filteredAndSortedData.map((coin) => (
+              <CoinRow key={coin.id} coin={coin} />
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
