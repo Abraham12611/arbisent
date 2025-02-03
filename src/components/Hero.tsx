@@ -77,7 +77,7 @@ const Hero = () => {
 
         {/* Bottom Section - Text Input Area */}
         <div className="max-w-[75%] mx-auto">
-          <div className="relative overflow-hidden rounded-2xl bg-[#1A1D24]/90 backdrop-blur-lg border border-arbisent-primary/20 shadow-[0_0_25px_rgba(37,99,235,0.15),0_0_15px_rgba(37,99,235,0.1)] p-8">
+          <div className="relative overflow-hidden rounded-2xl bg-[#1A1D24]/90 backdrop-blur-lg border border-arbisent-primary/20 shadow-[0_0_25px_rgba(37,99,235,0.15),0_0_15px_rgba(37,99,235,0.1)] p-6">
             {/* Neon glow effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-arbisent-primary/5 to-transparent animate-shine" />
             
@@ -87,18 +87,18 @@ const Hero = () => {
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Enter your arbitrage strategy... e.g., 'Monitor ETH/USDT price gaps between Uniswap and SushiSwap'"
-              className="w-full bg-[#12141A]/90 border border-arbisent-text/10 rounded-xl px-6 py-4 text-lg text-arbisent-text placeholder-arbisent-text/40 focus:outline-none focus:border-arbisent-primary/30 focus:ring-1 focus:ring-arbisent-primary/30 transition-all shadow-inner"
+              className="w-full bg-[#12141A]/90 border border-arbisent-text/10 rounded-xl px-4 py-3 text-lg text-arbisent-text placeholder-arbisent-text/40 focus:outline-none focus:border-arbisent-primary/30 focus:ring-1 focus:ring-arbisent-primary/30 transition-all shadow-inner"
             />
 
             {/* QuickStart options */}
-            <div className="flex flex-wrap gap-3 mt-6 mb-8">
+            <div className="flex flex-wrap gap-2 mt-4 mb-6">
               {quickStartOptions.map((option, index) => (
                 <button
                   key={index}
                   onClick={() => setPrompt(option.label)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#12141A]/50 border border-arbisent-text/10 text-arbisent-text/80 hover:bg-[#12141A]/70 hover:border-arbisent-primary/30 transition-all group"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#12141A]/50 border border-arbisent-text/10 text-sm text-arbisent-text/80 hover:bg-[#12141A]/70 hover:border-arbisent-primary/30 transition-all group"
                 >
-                  <option.icon className="w-4 h-4 text-arbisent-primary" />
+                  <option.icon className="w-3.5 h-3.5 text-arbisent-primary" />
                   <span>{option.label}</span>
                 </button>
               ))}
@@ -108,10 +108,10 @@ const Hero = () => {
             <div className="flex justify-end">
               <button 
                 onClick={handleGetStarted}
-                className="bg-arbisent-primary text-arbisent-text px-6 py-3 rounded-xl font-medium hover:bg-opacity-90 transition-all shadow-lg shadow-arbisent-primary/20 hover:shadow-arbisent-primary/30 hover:translate-y-[-1px] inline-flex items-center gap-2 group"
+                className="bg-arbisent-primary text-arbisent-text px-4 py-2 rounded-xl text-sm font-medium hover:bg-opacity-90 transition-all shadow-lg shadow-arbisent-primary/20 hover:shadow-arbisent-primary/30 hover:translate-y-[-1px] inline-flex items-center gap-1.5 group"
               >
                 Start building
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
           </div>
