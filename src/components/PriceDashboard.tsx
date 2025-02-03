@@ -19,7 +19,7 @@ interface CoinData {
   };
 }
 
-export const PriceDashboard = () => {
+const PriceDashboard = () => {
   const [watchedPairs, setWatchedPairs] = useState<any[]>([]);
 
   // Fetch crypto data from CoinGecko
@@ -249,3 +249,5 @@ export const PriceDashboard = () => {
     </section>
   );
 };
+
+export default PriceDashboard;
