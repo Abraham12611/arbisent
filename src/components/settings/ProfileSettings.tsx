@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Form,
   FormControl,
@@ -24,20 +22,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Upload } from "lucide-react";
-
-interface ProfileFormValues {
-  username: string;
-  avatar_url: string;
-  email_preferences: {
-    marketing: boolean;
-    trade_alerts: boolean;
-    security_notifications: boolean;
-  };
-}
+import { Loader2 } from "lucide-react";
+import { AvatarSection } from "./profile/AvatarSection";
+import { EmailPreferencesSection } from "./profile/EmailPreferencesSection";
+import type { ProfileFormValues } from "@/types/preferences";
 
 export function ProfileSettings() {
   const [isLoading, setIsLoading] = useState(false);
@@ -152,36 +142,10 @@ export function ProfileSettings() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <FormField
+          <AvatarSection
             control={form.control}
-            name="avatar_url"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Profile Picture</FormLabel>
-                <FormControl>
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-20 w-20">
-                      <AvatarImage src={field.value} />
-                      <AvatarFallback>
-                        {form.getValues("username")?.charAt(0)?.toUpperCase() || "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col gap-2">
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAvatarChange}
-                        className="w-full"
-                      />
-                      <FormDescription>
-                        Upload a new profile picture (max 2MB)
-                      </FormDescription>
-                    </div>
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            onAvatarChange={handleAvatarChange}
+            username={form.getValues("username")}
           />
 
           <FormField
@@ -201,69 +165,7 @@ export function ProfileSettings() {
             )}
           />
 
-          <div className="space-y-4">
-            <Label>Email Preferences</Label>
-            <FormField
-              control={form.control}
-              name="email_preferences.marketing"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Marketing emails</FormLabel>
-                    <FormDescription>
-                      Receive emails about new features and updates
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email_preferences.trade_alerts"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Trade alerts</FormLabel>
-                    <FormDescription>
-                      Get notified about important trade events
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email_preferences.security_notifications"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Security notifications</FormLabel>
-                    <FormDescription>
-                      Receive alerts about security events
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
+          <EmailPreferencesSection control={form.control} />
 
           <div className="flex justify-between">
             <AlertDialog>

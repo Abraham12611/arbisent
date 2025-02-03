@@ -47,7 +47,7 @@ export function TradingPairsSection({ control }: TradingPairsSectionProps) {
             <FormControl>
               <Select 
                 value={field.value?.[0] || ''} 
-                onValueChange={(value) => field.onChange([value, ...field.value?.slice(1) || []])}
+                onValueChange={(value) => field.onChange([value, ...(field.value?.slice(1) || [])])}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select trading pair" />

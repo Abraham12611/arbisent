@@ -17,3 +17,9 @@ export interface EmailPreferences {
   trade_alerts: boolean;
   security_notifications: boolean;
 }
+
+export interface ProfileFormValues {
+  username: string;
+  avatar_url: string;
+  email_preferences: EmailPreferences;
+}
