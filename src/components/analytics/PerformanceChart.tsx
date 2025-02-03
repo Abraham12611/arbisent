@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "@/components/ui/chart";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 
 interface TradeData {
   date: string;
@@ -105,28 +106,61 @@ export const PerformanceChart = () => {
       </CardHeader>
       <CardContent>
         <div className="h-[400px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data}>
-              <XAxis
-                tickFormatter={(value) => format(new Date(value), "MMM d")}
-                tickLine={false}
-                axisLine={false}
-                stroke="#94a3b8"
-              />
-              <YAxis
-                tickFormatter={(value) => `$${value}`}
-                tickLine={false}
-                axisLine={false}
-                stroke="#94a3b8"
-              />
-              <Line
-                dataKey="profit"
-                stroke="#0567AB"
-                strokeWidth={2}
-                dot={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <ChartContainer>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={data}>
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(value) => format(new Date(value), "MMM d")}
+                  tickLine={false}
+                  axisLine={false}
+                  stroke="#94a3b8"
+                />
+                <YAxis
+                  tickFormatter={(value) => `$${value}`}
+                  tickLine={false}
+                  axisLine={false}
+                  stroke="#94a3b8"
+                />
+                <ChartTooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <ChartTooltipContent>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="flex flex-col">
+                              <span className="text-[0.70rem] uppercase text-muted-foreground">
+                                Date
+                              </span>
+                              <span className="font-bold text-muted-foreground">
+                                {format(new Date(payload[0].payload.date), "MMM d, yyyy")}
+                              </span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-[0.70rem] uppercase text-muted-foreground">
+                                Profit
+                              </span>
+                              <span className="font-bold">
+                                ${Number(payload[0].value).toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+                        </ChartTooltipContent>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="profit"
+                  stroke="#0567AB"
+                  strokeWidth={2}
+                  dot={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartContainer>
         </div>
       </CardContent>
     </Card>

@@ -69,6 +69,51 @@ export type Database = {
         }
         Relationships: []
       }
+      trades: {
+        Row: {
+          amount: number
+          closed_at: string | null
+          created_at: string | null
+          entry_price: number
+          exit_price: number | null
+          id: string
+          pair_name: string
+          profit_loss: number | null
+          side: string
+          status: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          closed_at?: string | null
+          created_at?: string | null
+          entry_price: number
+          exit_price?: number | null
+          id?: string
+          pair_name: string
+          profit_loss?: number | null
+          side: string
+          status?: string
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          closed_at?: string | null
+          created_at?: string | null
+          entry_price?: number
+          exit_price?: number | null
+          id?: string
+          pair_name?: string
+          profit_loss?: number | null
+          side?: string
+          status?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       watched_pairs: {
         Row: {
           created_at: string
