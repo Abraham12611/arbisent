@@ -110,7 +110,7 @@ const Hero = () => {
                 onClick={handleGetStarted}
                 className="bg-arbisent-primary text-arbisent-text px-4 py-2 rounded-xl text-sm font-medium hover:bg-opacity-90 transition-all shadow-lg shadow-arbisent-primary/20 hover:shadow-arbisent-primary/30 hover:translate-y-[-1px] inline-flex items-center gap-1.5 group"
               >
-                Start building
+                Start Trading
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
