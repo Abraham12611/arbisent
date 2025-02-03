@@ -1,17 +1,21 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { format } from "date-fns";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "@/components/ui/chart";
 
 interface TradeData {
   date: string;
   profit: number;
+}
+
+interface Trade {
+  created_at: string;
+  profit_loss: number;
 }
 
 export const PerformanceChart = () => {
@@ -42,7 +46,7 @@ export const PerformanceChart = () => {
         }
 
         // Group trades by date and calculate daily profit
-        const dailyProfits = trades.reduce((acc: { [key: string]: number }, trade) => {
+        const dailyProfits = (trades as Trade[]).reduce((acc: { [key: string]: number }, trade) => {
           const date = format(new Date(trade.created_at), "yyyy-MM-dd");
           acc[date] = (acc[date] || 0) + Number(trade.profit_loss);
           return acc;
@@ -87,7 +91,7 @@ export const PerformanceChart = () => {
         <div className="flex items-center gap-4">
           <DatePickerWithRange
             value={dateRange}
-            onChange={setDateRange}
+            onChange={(value: any) => setDateRange(value)}
           />
           <Button
             variant="outline"
@@ -104,49 +108,18 @@ export const PerformanceChart = () => {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data}>
               <XAxis
-                dataKey="date"
-                stroke="#94a3b8"
+                tickFormatter={(value) => format(new Date(value), "MMM d")}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => format(new Date(value), "MMM d")}
+                stroke="#94a3b8"
               />
               <YAxis
-                stroke="#94a3b8"
+                tickFormatter={(value) => `$${value}`}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => `$${value}`}
-              />
-              <Tooltip
-                content={({ active, payload }) => {
-                  if (active && payload && payload.length) {
-                    return (
-                      <div className="rounded-lg border bg-background p-2 shadow-sm">
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="flex flex-col">
-                            <span className="text-[0.70rem] uppercase text-muted-foreground">
-                              Date
-                            </span>
-                            <span className="font-bold text-muted-foreground">
-                              {format(new Date(payload[0].payload.date), "MMM d, yyyy")}
-                            </span>
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="text-[0.70rem] uppercase text-muted-foreground">
-                              Profit
-                            </span>
-                            <span className="font-bold">
-                              ${payload[0].value.toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }
-                  return null;
-                }}
+                stroke="#94a3b8"
               />
               <Line
-                type="monotone"
                 dataKey="profit"
                 stroke="#0567AB"
                 strokeWidth={2}
