@@ -2,20 +2,20 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowUpDown, TrendingUp, AlertCircle, BarChart } from "lucide-react";
 import { toast } from "sonner";
+import { Database } from "@/integrations/supabase/types";
 
-interface KPIMetrics {
-  active_opportunities: number;
-  total_profit_24h: number;
-  risk_level: string;
-  success_rate: number;
-}
+type KPIMetrics = Database['public']['Tables']['kpi_metrics']['Row'];
 
 export const KPIMetrics = () => {
   const [metrics, setMetrics] = useState<KPIMetrics>({
+    id: '',
+    user_id: null,
     active_opportunities: 0,
     total_profit_24h: 0,
     risk_level: "Low",
     success_rate: 0,
+    created_at: null,
+    updated_at: null
   });
 
   useEffect(() => {
@@ -33,12 +33,7 @@ export const KPIMetrics = () => {
         }
 
         if (data) {
-          setMetrics({
-            active_opportunities: data.active_opportunities,
-            total_profit_24h: data.total_profit_24h,
-            risk_level: data.risk_level,
-            success_rate: data.success_rate,
-          });
+          setMetrics(data);
         }
       } catch (error: any) {
         console.error("Error in fetchKPIMetrics:", error);
@@ -62,12 +57,7 @@ export const KPIMetrics = () => {
         (payload) => {
           console.log("KPI metrics changed:", payload);
           if (payload.new) {
-            setMetrics({
-              active_opportunities: payload.new.active_opportunities,
-              total_profit_24h: payload.new.total_profit_24h,
-              risk_level: payload.new.risk_level,
-              success_rate: payload.new.success_rate,
-            });
+            setMetrics(payload.new as KPIMetrics);
           }
         }
       )
@@ -97,7 +87,7 @@ export const KPIMetrics = () => {
           <TrendingUp className="text-green-500" size={20} />
         </div>
         <p className="text-2xl font-bold text-arbisent-text mt-2">
-          ${metrics.total_profit_24h.toFixed(2)}
+          ${metrics.total_profit_24h?.toFixed(2)}
         </p>
         <p className="text-sm text-green-500 mt-1">Updated in real-time</p>
       </div>
@@ -119,7 +109,7 @@ export const KPIMetrics = () => {
           <BarChart className="text-arbisent-accent" size={20} />
         </div>
         <p className="text-2xl font-bold text-arbisent-text mt-2">
-          {metrics.success_rate.toFixed(1)}%
+          {metrics.success_rate?.toFixed(1)}%
         </p>
         <p className="text-sm text-arbisent-text/70 mt-1">Last 100 trades</p>
       </div>
