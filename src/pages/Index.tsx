@@ -1,6 +1,6 @@
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
-import PriceDashboard from "@/components/PriceDashboard";
+import { PriceDashboard } from "@/components/PriceDashboard";
 import About from "@/components/About";
 import Footer from "@/components/Footer";
 
