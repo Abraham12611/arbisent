@@ -85,6 +85,15 @@ export const PerformanceChart = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  const chartConfig = {
+    profit: {
+      theme: {
+        light: "#0567AB",
+        dark: "#0567AB"
+      }
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -106,7 +115,7 @@ export const PerformanceChart = () => {
       </CardHeader>
       <CardContent>
         <div className="h-[400px]">
-          <ChartContainer>
+          <ChartContainer config={chartConfig}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data}>
                 <XAxis
