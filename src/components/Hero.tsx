@@ -1,6 +1,29 @@
 import { ArrowRight } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 const Hero = () => {
+  const [prompt, setPrompt] = useState("");
+
+  const handleGetStarted = async () => {
+    try {
+      // Handle the get started action
+      if (!prompt.trim()) {
+        toast.error("Please enter a trading prompt first");
+        return;
+      }
+      // Future wallet connection or other actions can go here
+      toast.success("Processing your request...");
+    } catch (error: any) {
+      if (error.message?.includes("rejected")) {
+        toast.error("Request was cancelled. Please try again.");
+      } else {
+        toast.error("An error occurred. Please try again later.");
+      }
+      console.error("Error:", error);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black to-arbisent-primary/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
@@ -50,11 +73,16 @@ const Hero = () => {
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-arbisent-primary/5 to-transparent animate-shine" />
             <input
               type="text"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
               placeholder="Enter your trading prompt... e.g., 'Find arbitrage opportunities on Solana'"
               className="w-full bg-[#12141A]/80 border border-arbisent-text/10 rounded-xl px-4 py-3.5 text-arbisent-text placeholder-arbisent-text/40 focus:outline-none focus:border-arbisent-primary/30 focus:ring-1 focus:ring-arbisent-primary/30 transition-all shadow-inner"
             />
             <div className="mt-4 flex justify-end">
-              <button className="bg-arbisent-primary text-arbisent-text px-6 py-3 rounded-xl font-medium hover:bg-opacity-90 transition-all shadow-lg shadow-arbisent-primary/20 hover:shadow-arbisent-primary/30 hover:translate-y-[-1px] inline-flex items-center gap-2 group">
+              <button 
+                onClick={handleGetStarted}
+                className="bg-arbisent-primary text-arbisent-text px-6 py-3 rounded-xl font-medium hover:bg-opacity-90 transition-all shadow-lg shadow-arbisent-primary/20 hover:shadow-arbisent-primary/30 hover:translate-y-[-1px] inline-flex items-center gap-2 group"
+              >
                 Get Started
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
