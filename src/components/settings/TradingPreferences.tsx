@@ -8,50 +8,73 @@ import { Loader2 } from "lucide-react";
 import { TradingPairsSection } from "./trading/TradingPairsSection";
 import { RiskManagementSection } from "./trading/RiskManagementSection";
 import { InterfaceSection } from "./trading/InterfaceSection";
-
-interface TradingPreferencesFormValues {
-  default_pairs: string[];
-  risk_management: {
-    default_stop_loss_percentage: number;
-    default_take_profit_percentage: number;
-    max_position_size_usd: number;
-  };
-  interface_preferences: {
-    chart_type: string;
-    default_timeframe: string;
-    layout: string;
-  };
-}
+import type { TradingPreferences } from "@/types/preferences";
 
 export function TradingPreferences() {
   const [isLoading, setIsLoading] = useState(false);
 
-  const form = useForm<TradingPreferencesFormValues>({
+  const form = useForm<TradingPreferences>({
     defaultValues: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('trading_preferences')
-        .eq('id', user?.id)
-        .single();
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('trading_preferences')
+          .eq('id', user?.id)
+          .single();
 
-      return {
-        default_pairs: profile?.trading_preferences?.default_pairs || ['BTC/USDT', 'ETH/USDT', 'SOL/USDT'],
-        risk_management: {
-          default_stop_loss_percentage: profile?.trading_preferences?.risk_management?.default_stop_loss_percentage || 5,
-          default_take_profit_percentage: profile?.trading_preferences?.risk_management?.default_take_profit_percentage || 10,
-          max_position_size_usd: profile?.trading_preferences?.risk_management?.max_position_size_usd || 1000,
-        },
-        interface_preferences: {
-          chart_type: profile?.trading_preferences?.interface_preferences?.chart_type || 'candlestick',
-          default_timeframe: profile?.trading_preferences?.interface_preferences?.default_timeframe || '1h',
-          layout: profile?.trading_preferences?.interface_preferences?.layout || 'default',
-        },
-      };
+        const defaultPreferences: TradingPreferences = {
+          default_pairs: ['BTC/USDT', 'ETH/USDT', 'SOL/USDT'],
+          risk_management: {
+            default_stop_loss_percentage: 5,
+            default_take_profit_percentage: 10,
+            max_position_size_usd: 1000,
+          },
+          interface_preferences: {
+            chart_type: 'candlestick',
+            default_timeframe: '1h',
+            layout: 'default',
+          },
+        };
+
+        if (!profile?.trading_preferences) {
+          return defaultPreferences;
+        }
+
+        const preferences = profile.trading_preferences as TradingPreferences;
+        return {
+          default_pairs: preferences.default_pairs || defaultPreferences.default_pairs,
+          risk_management: {
+            default_stop_loss_percentage: preferences.risk_management?.default_stop_loss_percentage || defaultPreferences.risk_management.default_stop_loss_percentage,
+            default_take_profit_percentage: preferences.risk_management?.default_take_profit_percentage || defaultPreferences.risk_management.default_take_profit_percentage,
+            max_position_size_usd: preferences.risk_management?.max_position_size_usd || defaultPreferences.risk_management.max_position_size_usd,
+          },
+          interface_preferences: {
+            chart_type: preferences.interface_preferences?.chart_type || defaultPreferences.interface_preferences.chart_type,
+            default_timeframe: preferences.interface_preferences?.default_timeframe || defaultPreferences.interface_preferences.default_timeframe,
+            layout: preferences.interface_preferences?.layout || defaultPreferences.interface_preferences.layout,
+          },
+        };
+      } catch (error) {
+        console.error('Error loading trading preferences:', error);
+        return {
+          default_pairs: ['BTC/USDT', 'ETH/USDT', 'SOL/USDT'],
+          risk_management: {
+            default_stop_loss_percentage: 5,
+            default_take_profit_percentage: 10,
+            max_position_size_usd: 1000,
+          },
+          interface_preferences: {
+            chart_type: 'candlestick',
+            default_timeframe: '1h',
+            layout: 'default',
+          },
+        };
+      }
     },
   });
 
-  const onSubmit = async (values: TradingPreferencesFormValues) => {
+  const onSubmit = async (values: TradingPreferences) => {
     try {
       setIsLoading(true);
       const { data: { user } } = await supabase.auth.getUser();

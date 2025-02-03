@@ -13,9 +13,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { TradingPreferences } from "@/types/preferences";
 
 interface TradingPairsSectionProps {
-  control: Control<any>;
+  control: Control<TradingPreferences>;
 }
 
 const AVAILABLE_PAIRS = [
@@ -45,8 +46,8 @@ export function TradingPairsSection({ control }: TradingPairsSectionProps) {
             <FormLabel>Trading Pairs</FormLabel>
             <FormControl>
               <Select 
-                value={field.value[0]} 
-                onValueChange={(value) => field.onChange([value, ...field.value.slice(1)])}
+                value={field.value?.[0] || ''} 
+                onValueChange={(value) => field.onChange([value, ...field.value?.slice(1) || []])}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select trading pair" />
