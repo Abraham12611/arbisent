@@ -8,23 +8,32 @@ import { Trade } from "@/types/trade";
 
 export function ActivePositionsView() {
   const [positions, setPositions] = useState<Trade[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Fetch initial active positions
     const fetchPositions = async () => {
-      const { data, error } = await supabase
-        .from('trades')
-        .select('*')
-        .eq('status', 'Open')
-        .order('created_at', { ascending: false });
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('trades')
+          .select('*')
+          .eq('status', 'Open')
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        toast.error("Failed to load active positions");
-        console.error("Error fetching positions:", error);
-        return;
+        if (error) {
+          toast.error("Failed to load active positions");
+          console.error("Error fetching positions:", error);
+          return;
+        }
+
+        setPositions(data || []);
+      } catch (error) {
+        console.error("Error in fetchPositions:", error);
+        toast.error("An unexpected error occurred");
+      } finally {
+        setIsLoading(false);
       }
-
-      setPositions(data || []);
     };
 
     fetchPositions();
@@ -59,10 +68,16 @@ export function ActivePositionsView() {
           <CardTitle>Active Positions</CardTitle>
         </CardHeader>
         <CardContent>
-          <PositionControls />
-          <PositionTable positions={positions} />
+          <PositionControls totalPositions={positions.length} totalValue={calculateTotalValue(positions)} />
+          <PositionTable positions={positions} isLoading={isLoading} />
         </CardContent>
       </Card>
     </div>
   );
+}
+
+function calculateTotalValue(positions: Trade[]): number {
+  return positions.reduce((total, position) => {
+    return total + (position.amount * position.entry_price);
+  }, 0);
 }

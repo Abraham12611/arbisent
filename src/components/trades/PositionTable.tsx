@@ -9,12 +9,42 @@ import {
 import { Trade } from "@/types/trade";
 import { StopLossForm } from "./StopLossForm";
 import { TakeProfitForm } from "./TakeProfitForm";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface PositionTableProps {
   positions: Trade[];
+  isLoading: boolean;
 }
 
-export function PositionTable({ positions }: PositionTableProps) {
+export function PositionTable({ positions, isLoading }: PositionTableProps) {
+  const handleClosePosition = async (positionId: string) => {
+    try {
+      const { error } = await supabase
+        .from('trades')
+        .update({ 
+          status: 'Closed',
+          closed_at: new Date().toISOString()
+        })
+        .eq('id', positionId);
+
+      if (error) throw error;
+      toast.success("Position closed successfully");
+    } catch (error) {
+      console.error("Error closing position:", error);
+      toast.error("Failed to close position");
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -28,6 +58,7 @@ export function PositionTable({ positions }: PositionTableProps) {
             <TableHead>Current P/L</TableHead>
             <TableHead>Stop Loss</TableHead>
             <TableHead>Take Profit</TableHead>
+            <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -47,11 +78,20 @@ export function PositionTable({ positions }: PositionTableProps) {
               <TableCell>
                 <TakeProfitForm position={position} />
               </TableCell>
+              <TableCell>
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  onClick={() => handleClosePosition(position.id)}
+                >
+                  Close
+                </Button>
+              </TableCell>
             </TableRow>
           ))}
           {positions.length === 0 && (
             <TableRow>
-              <TableCell colSpan={8} className="text-center">
+              <TableCell colSpan={9} className="text-center">
                 No active positions
               </TableCell>
             </TableRow>
