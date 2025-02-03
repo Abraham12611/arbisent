@@ -8,6 +8,7 @@ interface CoinData {
   id: string;
   symbol: string;
   name: string;
+  image: string;
   current_price: number;
   price_change_percentage_24h: number;
   price_change_percentage_7d_in_currency: number;
@@ -25,13 +26,19 @@ const PriceDashboard = () => {
   const { data: coinData, isLoading } = useQuery({
     queryKey: ["crypto-prices"],
     queryFn: async () => {
-      const response = await fetch(
-        "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1&sparkline=true&price_change_percentage=24h,7d"
-      );
-      if (!response.ok) {
-        throw new Error("Failed to fetch crypto data");
+      try {
+        const response = await fetch(
+          "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1&sparkline=true&price_change_percentage=24h,7d"
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch crypto data");
+        }
+        return response.json() as Promise<CoinData[]>;
+      } catch (error: any) {
+        console.error("Error fetching crypto data:", error);
+        toast.error("Failed to fetch crypto data. Please try again later.");
+        throw error;
       }
-      return response.json() as Promise<CoinData[]>;
     },
     refetchInterval: 30000, // Refresh every 30 seconds
   });
@@ -62,17 +69,23 @@ const PriceDashboard = () => {
   }, []);
 
   const fetchWatchedPairs = async () => {
-    const { data, error } = await supabase
-      .from("watched_pairs")
-      .select("*")
-      .order("created_at", { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from("watched_pairs")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Error fetching watched pairs:", error);
-      return;
+      if (error) {
+        console.error("Error fetching watched pairs:", error);
+        toast.error("Failed to fetch watched pairs");
+        return;
+      }
+
+      setWatchedPairs(data);
+    } catch (error: any) {
+      console.error("Error in fetchWatchedPairs:", error);
+      toast.error("An error occurred while fetching watched pairs");
     }
-
-    setWatchedPairs(data);
   };
 
   const addToWatchlist = async (coin: CoinData) => {
@@ -80,23 +93,42 @@ const PriceDashboard = () => {
       // Get the current user's session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      if (sessionError || !session) {
+      if (sessionError) {
+        console.error("Session error:", sessionError);
+        toast.error("Authentication error. Please try again.");
+        return;
+      }
+
+      if (!session) {
         toast.error("Please login to add to watchlist");
         return;
       }
 
       const { error } = await supabase.from("watched_pairs").insert({
-        user_id: session.user.id, // Add the user_id field
+        user_id: session.user.id,
         pair_name: coin.symbol.toUpperCase() + "/USD",
         pair_address: coin.id,
         dex_name: "CoinGecko",
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error adding to watchlist:", error);
+        if (error.code === "23505") { // Unique violation
+          toast.error("This pair is already in your watchlist");
+        } else {
+          toast.error("Failed to add to watchlist");
+        }
+        return;
+      }
+
       toast.success(`Added ${coin.name} to watchlist`);
     } catch (error: any) {
-      console.error("Error adding to watchlist:", error);
-      toast.error(error.message);
+      console.error("Error in addToWatchlist:", error);
+      if (error.message?.includes("rejected")) {
+        toast.error("Request was cancelled. Please try again.");
+      } else {
+        toast.error("An error occurred. Please try again later.");
+      }
     }
   };
 
@@ -143,7 +175,7 @@ const PriceDashboard = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <img
-                        src={`https://assets.coingecko.com/coins/images/1/thumb/${coin.id}.png`}
+                        src={coin.image}
                         alt={coin.name}
                         className="w-6 h-6 rounded-full"
                         onError={(e) => {
