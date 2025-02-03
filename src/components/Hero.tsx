@@ -75,7 +75,7 @@ const Hero = () => {
           </div>
         </div>
 
-        {/* Bottom Section - Text Input Area (Updated styling) */}
+        {/* Bottom Section - Text Input Area */}
         <div className="max-w-[75%] mx-auto">
           <div className="relative overflow-hidden rounded-2xl bg-[#1A1D24]/90 backdrop-blur-lg border border-arbisent-primary/20 shadow-[0_0_25px_rgba(37,99,235,0.15),0_0_15px_rgba(37,99,235,0.1)] p-8">
             {/* Neon glow effect */}
@@ -104,12 +104,8 @@ const Hero = () => {
               ))}
             </div>
 
-            {/* Action buttons */}
-            <div className="flex justify-between items-center">
-              <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#12141A]/50 border border-arbisent-text/10 text-arbisent-text/80 hover:bg-[#12141A]/70 hover:border-arbisent-primary/30 transition-all">
-                <span className="text-arbisent-text/60">Attach</span>
-              </button>
-              
+            {/* Action button */}
+            <div className="flex justify-end">
               <button 
                 onClick={handleGetStarted}
                 className="bg-arbisent-primary text-arbisent-text px-6 py-3 rounded-xl font-medium hover:bg-opacity-90 transition-all shadow-lg shadow-arbisent-primary/20 hover:shadow-arbisent-primary/30 hover:translate-y-[-1px] inline-flex items-center gap-2 group"
