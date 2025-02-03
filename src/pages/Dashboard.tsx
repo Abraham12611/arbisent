@@ -5,6 +5,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { KPIMetrics } from "@/components/KPIMetrics";
 import { PriceDashboard } from "@/components/PriceDashboard";
 import { AnalyticsView } from "@/components/analytics/AnalyticsView";
+import { HistoryView } from "@/components/analytics/HistoryView";
 import { ActivePositionsView } from "@/components/trades/ActivePositionsView";
 import { ProfileSettings } from "@/components/settings/ProfileSettings";
 import { TradingPreferences } from "@/components/settings/TradingPreferences";
@@ -49,6 +50,8 @@ const Dashboard = () => {
         return <ActivePositionsView />;
       case "analytics":
         return <AnalyticsView />;
+      case "history":
+        return <HistoryView />;
       case "settings":
         return (
           <div className="space-y-8">
