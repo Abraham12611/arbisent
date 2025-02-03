@@ -25,11 +25,11 @@ const Hero = () => {
   };
 
   const quickStartOptions = [
-    { icon: ShoppingBag, label: "Online shop" },
-    { icon: Edit, label: "Personal blog" },
-    { icon: AlarmClock, label: "Waitlist site" },
-    { icon: Dumbbell, label: "Workout tracker" },
-    { icon: Bot, label: "AI debate app" },
+    { icon: ShoppingBag, label: "ETH/USDT arbitrage" },
+    { icon: Edit, label: "SOL/USDC pairs" },
+    { icon: AlarmClock, label: "BTC cross-DEX" },
+    { icon: Dumbbell, label: "MATIC opportunities" },
+    { icon: Bot, label: "AI trading strategy" },
   ];
 
   return (
@@ -86,7 +86,7 @@ const Hero = () => {
               type="text"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="What would you like to build? Start typing or choose an example..."
+              placeholder="Enter your arbitrage strategy... e.g., 'Monitor ETH/USDT price gaps between Uniswap and SushiSwap'"
               className="w-full bg-[#12141A]/90 border border-arbisent-text/10 rounded-xl px-6 py-4 text-lg text-arbisent-text placeholder-arbisent-text/40 focus:outline-none focus:border-arbisent-primary/30 focus:ring-1 focus:ring-arbisent-primary/30 transition-all shadow-inner"
             />
 
