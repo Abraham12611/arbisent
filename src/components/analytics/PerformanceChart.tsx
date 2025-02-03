@@ -1,56 +1,161 @@
-import { useState } from "react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { format } from "date-fns";
+import { Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
+import { toast } from "sonner";
 
-const mockData = [
-  { date: "2024-01", profit: 2500 },
-  { date: "2024-02", profit: 3800 },
-  { date: "2024-03", profit: 3200 },
-  { date: "2024-04", profit: 4100 },
-];
+interface TradeData {
+  date: string;
+  profit: number;
+}
 
 export const PerformanceChart = () => {
-  const [data] = useState(mockData);
+  const [data, setData] = useState<TradeData[]>([]);
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | undefined>();
+
+  useEffect(() => {
+    const fetchTradeData = async () => {
+      try {
+        let query = supabase
+          .from("trades")
+          .select("created_at, profit_loss")
+          .eq("status", "Closed")
+          .order("created_at", { ascending: true });
+
+        if (dateRange?.from && dateRange?.to) {
+          query = query
+            .gte("created_at", dateRange.from.toISOString())
+            .lte("created_at", dateRange.to.toISOString());
+        }
+
+        const { data: trades, error } = await query;
+
+        if (error) {
+          console.error("Error fetching trade data:", error);
+          toast.error("Failed to fetch trade data");
+          return;
+        }
+
+        // Group trades by date and calculate daily profit
+        const dailyProfits = trades.reduce((acc: { [key: string]: number }, trade) => {
+          const date = format(new Date(trade.created_at), "yyyy-MM-dd");
+          acc[date] = (acc[date] || 0) + Number(trade.profit_loss);
+          return acc;
+        }, {});
+
+        const chartData = Object.entries(dailyProfits).map(([date, profit]) => ({
+          date,
+          profit,
+        }));
+
+        setData(chartData);
+      } catch (error) {
+        console.error("Error in fetchTradeData:", error);
+        toast.error("An error occurred while fetching trade data");
+      }
+    };
+
+    fetchTradeData();
+  }, [dateRange]);
+
+  const handleExport = () => {
+    const csvContent = [
+      ["Date", "Profit"],
+      ...data.map(item => [item.date, item.profit.toString()])
+    ].map(row => row.join(",")).join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "performance_data.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
 
   return (
-    <div className="w-full h-[400px] bg-black/40 p-6 rounded-lg border border-arbisent-text/10 backdrop-blur-sm">
-      <h3 className="text-xl font-semibold text-arbisent-text mb-4">Performance History</h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-          <XAxis dataKey="date" stroke="#94a3b8" />
-          <YAxis stroke="#94a3b8" />
-          <Tooltip
-            content={({ active, payload }) => {
-              if (active && payload && payload.length) {
-                return (
-                  <div className="bg-black/80 border border-arbisent-text/10 p-2 rounded">
-                    <p className="text-arbisent-text">
-                      Profit: ${payload[0].value}
-                    </p>
-                  </div>
-                );
-              }
-              return null;
-            }}
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Performance History</CardTitle>
+        <div className="flex items-center gap-4">
+          <DatePickerWithRange
+            value={dateRange}
+            onChange={setDateRange}
           />
-          <Line
-            type="monotone"
-            dataKey="profit"
-            stroke="#0567AB"
-            strokeWidth={2}
-            dot={{ fill: "#0567AB" }}
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleExport}
+            title="Export data"
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[400px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={data}>
+              <XAxis
+                dataKey="date"
+                stroke="#94a3b8"
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(value) => format(new Date(value), "MMM d")}
+              />
+              <YAxis
+                stroke="#94a3b8"
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(value) => `$${value}`}
+              />
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    return (
+                      <div className="rounded-lg border bg-background p-2 shadow-sm">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="flex flex-col">
+                            <span className="text-[0.70rem] uppercase text-muted-foreground">
+                              Date
+                            </span>
+                            <span className="font-bold text-muted-foreground">
+                              {format(new Date(payload[0].payload.date), "MMM d, yyyy")}
+                            </span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-[0.70rem] uppercase text-muted-foreground">
+                              Profit
+                            </span>
+                            <span className="font-bold">
+                              ${payload[0].value.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="profit"
+                stroke="#0567AB"
+                strokeWidth={2}
+                dot={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
