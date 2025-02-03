@@ -25,37 +25,47 @@ const menuItems = [
   {
     title: "Overview",
     icon: LayoutDashboard,
-    url: "#overview"
+    url: "overview"
   },
   {
     title: "Active Trades",
     icon: Wallet,
-    url: "#trades"
+    url: "trades"
   },
   {
     title: "Analytics",
     icon: LineChart,
-    url: "#analytics"
+    url: "analytics"
   },
   {
     title: "History",
     icon: History,
-    url: "#history"
+    url: "history"
   },
   {
     title: "Settings",
     icon: Settings,
-    url: "#settings"
+    url: "settings"
   },
   {
     title: "Alerts",
     icon: Bell,
-    url: "#alerts"
+    url: "alerts"
   }
 ];
 
-export function DashboardLayout({ children }: { children: React.ReactNode }) {
+interface DashboardLayoutProps {
+  children: React.ReactNode;
+  onViewChange: (view: string) => void;
+}
+
+export function DashboardLayout({ children, onViewChange }: DashboardLayoutProps) {
   const [activeItem, setActiveItem] = useState("Overview");
+
+  const handleMenuClick = (title: string, url: string) => {
+    setActiveItem(title);
+    onViewChange(url);
+  };
 
   return (
     <SidebarProvider>
@@ -72,7 +82,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   {menuItems.map((item) => (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton
-                        onClick={() => setActiveItem(item.title)}
+                        onClick={() => handleMenuClick(item.title, item.url)}
                         data-active={activeItem === item.title}
                         tooltip={item.title}
                       >
