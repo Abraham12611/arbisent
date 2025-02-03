@@ -25,9 +25,10 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         arbisent: {
-          primary: "#60E3D5",
-          accent: "#0567AB",
-          text: "#F6F0F0",
+          primary: "#2563EB",    // Electric blue
+          accent: "#3B82F6",     // Bright blue
+          secondary: "#151822",   // Darker blue for cards
+          text: "#F8FAFC",       // White/light gray
         },
         primary: {
           DEFAULT: "hsl(var(--primary))",
