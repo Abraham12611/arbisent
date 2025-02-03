@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      kpi_metrics: {
+        Row: {
+          active_opportunities: number | null
+          created_at: string | null
+          id: string
+          risk_level: string | null
+          success_rate: number | null
+          total_profit_24h: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          active_opportunities?: number | null
+          created_at?: string | null
+          id?: string
+          risk_level?: string | null
+          success_rate?: number | null
+          total_profit_24h?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          active_opportunities?: number | null
+          created_at?: string | null
+          id?: string
+          risk_level?: string | null
+          success_rate?: number | null
+          total_profit_24h?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
