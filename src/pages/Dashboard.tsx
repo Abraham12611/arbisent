@@ -5,6 +5,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { KPIMetrics } from "@/components/KPIMetrics";
 import { PriceDashboard } from "@/components/PriceDashboard";
 import { AnalyticsView } from "@/components/analytics/AnalyticsView";
+import { ActivePositionsView } from "@/components/trades/ActivePositionsView";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -42,6 +43,8 @@ const Dashboard = () => {
             <PriceDashboard />
           </>
         );
+      case "trades":
+        return <ActivePositionsView />;
       case "analytics":
         return <AnalyticsView />;
       default:
