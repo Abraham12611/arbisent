@@ -1,206 +1,83 @@
-import { useState } from "react";
+import { useEffect } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { supabase } from "@/integrations/supabase/client";
+import { Form } from "@/components/ui/form";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { AvatarSection } from "./profile/AvatarSection";
 import { EmailPreferencesSection } from "./profile/EmailPreferencesSection";
-import type { ProfileFormValues } from "@/types/preferences";
+import { ConnectedWallets } from "./wallet/ConnectedWallets";
+
+const profileFormSchema = z.object({
+  username: z.string().min(2).max(30),
+  avatar_url: z.string(),
+  email_preferences: z.object({
+    marketing: z.boolean(),
+    trade_alerts: z.boolean(),
+    security_notifications: z.boolean(),
+  }),
+});
+
+type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export function ProfileSettings() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-
   const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileFormSchema),
     defaultValues: async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user found");
+
       const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user?.id)
+        .from("profiles")
+        .select("username, avatar_url, email_preferences")
+        .eq("id", user.id)
         .single();
 
+      if (!profile) throw new Error("No profile found");
+
       return {
-        username: profile?.username || '',
-        avatar_url: profile?.avatar_url || '',
-        email_preferences: profile?.email_preferences || {
-          marketing: false,
-          trade_alerts: true,
-          security_notifications: true,
-        },
+        username: profile.username || "",
+        avatar_url: profile.avatar_url || "",
+        email_preferences: profile.email_preferences as ProfileFormValues["email_preferences"],
       };
     },
   });
 
-  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setAvatarFile(file);
-    }
-  };
-
-  const uploadAvatar = async (userId: string) => {
-    if (!avatarFile) return null;
-
-    const fileExt = avatarFile.name.split('.').pop();
-    const filePath = `${userId}/avatar.${fileExt}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('avatars')
-      .upload(filePath, avatarFile, { upsert: true });
-
-    if (uploadError) {
-      throw uploadError;
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('avatars')
-      .getPublicUrl(filePath);
-
-    return publicUrl;
-  };
-
-  const onSubmit = async (values: ProfileFormValues) => {
+  async function onSubmit(data: ProfileFormValues) {
     try {
-      setIsLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
-      
       if (!user) throw new Error("No user found");
 
-      let avatarUrl = values.avatar_url;
-      if (avatarFile) {
-        avatarUrl = await uploadAvatar(user.id);
-      }
-
       const { error } = await supabase
-        .from('profiles')
+        .from("profiles")
         .update({
-          username: values.username,
-          avatar_url: avatarUrl,
-          email_preferences: values.email_preferences,
+          username: data.username,
+          avatar_url: data.avatar_url,
+          email_preferences: data.email_preferences,
         })
-        .eq('id', user.id);
+        .eq("id", user.id);
 
       if (error) throw error;
-
-      toast.success("Profile updated successfully");
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      setIsLoading(false);
+      toast.success("Profile updated successfully!");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error("Failed to update profile");
     }
-  };
-
-  const handleDeleteAccount = async () => {
-    try {
-      setIsLoading(true);
-      const { error } = await supabase.auth.admin.deleteUser(
-        (await supabase.auth.getUser()).data.user?.id || ''
-      );
-      
-      if (error) throw error;
-      
-      await supabase.auth.signOut();
-      toast.success("Account deleted successfully");
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium">Profile Settings</h3>
-        <p className="text-sm text-muted-foreground">
-          Manage your profile information and preferences
-        </p>
-      </div>
-
+    <div className="space-y-8">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <AvatarSection
-            control={form.control}
-            onAvatarChange={handleAvatarChange}
-            username={form.getValues("username")}
-          />
-
-          <FormField
-            control={form.control}
-            name="username"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Username</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormDescription>
-                  This is your public display name
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <EmailPreferencesSection control={form.control} />
-
-          <div className="flex justify-between">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" type="button">
-                  Delete Account
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete your
-                    account and remove your data from our servers.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDeleteAccount}
-                    className="bg-destructive text-destructive-foreground"
-                  >
-                    Delete Account
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-
-            <Button type="submit" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
-            </Button>
-          </div>
+          <AvatarSection form={form} />
+          <EmailPreferencesSection form={form} />
+          <Button type="submit">Update Profile</Button>
         </form>
       </Form>
+      
+      <ConnectedWallets />
     </div>
   );
 }

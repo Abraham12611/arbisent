@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Wallet, WalletCards } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -22,8 +21,22 @@ export function WalletConnector({ onClose }: WalletConnectorProps) {
       const response = await window.solana.connect();
       const walletAddress = response.publicKey.toString();
       
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('wallet_addresses')
+        .eq('id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      const isFirstWallet = !profile?.wallet_addresses || Object.keys(profile.wallet_addresses).length === 0;
+      
       const { error } = await supabase.from('profiles').update({
-        wallet_addresses: { phantom: walletAddress }
+        wallet_addresses: {
+          ...profile?.wallet_addresses,
+          phantom: {
+            address: walletAddress,
+            isDefault: isFirstWallet
+          }
+        }
       }).eq('id', (await supabase.auth.getUser()).data.user?.id);
 
       if (error) throw error;
@@ -51,8 +64,22 @@ export function WalletConnector({ onClose }: WalletConnectorProps) {
       });
       const walletAddress = accounts[0];
 
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('wallet_addresses')
+        .eq('id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      const isFirstWallet = !profile?.wallet_addresses || Object.keys(profile.wallet_addresses).length === 0;
+
       const { error } = await supabase.from('profiles').update({
-        wallet_addresses: { metamask: walletAddress }
+        wallet_addresses: {
+          ...profile?.wallet_addresses,
+          metamask: {
+            address: walletAddress,
+            isDefault: isFirstWallet
+          }
+        }
       }).eq('id', (await supabase.auth.getUser()).data.user?.id);
 
       if (error) throw error;
