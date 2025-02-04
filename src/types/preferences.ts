@@ -19,7 +19,7 @@ export interface PrivacySettings {
   share_trading_analytics: boolean;
   collect_usage_data: boolean;
   public_profile: boolean;
-  [key: string]: boolean;
+  [key: string]: boolean | string | number | { [key: string]: any } | any[];
 }
 
 export interface TradingPreferences {
@@ -28,13 +28,13 @@ export interface TradingPreferences {
     default_stop_loss_percentage: number;
     default_take_profit_percentage: number;
     max_position_size_usd: number;
-    [key: string]: number;
+    [key: string]: number | string | boolean | { [key: string]: any } | any[];
   };
   interface_preferences: {
     chart_type: string;
     default_timeframe: string;
     layout: string;
-    [key: string]: string;
+    [key: string]: string | number | boolean | { [key: string]: any } | any[];
   };
   [key: string]: any;
 }
@@ -43,5 +43,8 @@ export interface ProfileFormValues {
   username: string;
   avatar_url: string;
   email_preferences: EmailPreferences;
-  [key: string]: string | EmailPreferences;
+  [key: string]: string | EmailPreferences | { [key: string]: any } | any[];
 }
+
+// Add a type helper for Supabase JSON
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
