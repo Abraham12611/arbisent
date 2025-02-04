@@ -56,6 +56,9 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
     
     try {
       setIsLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) throw new Error("No user found");
 
       // Create a new chat if we don't have one
       if (!currentChatId) {
@@ -63,6 +66,7 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
           .from('chats')
           .insert([{ 
             title: prompt.slice(0, 50) + (prompt.length > 50 ? '...' : ''),
+            user_id: user.id
           }])
           .select()
           .single();
