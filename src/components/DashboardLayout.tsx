@@ -45,6 +45,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { WalletConnector } from "./WalletConnector";
+import { TradeExecutionModal } from "./trade/TradeExecutionModal";
 
 const menuItems = [
   {
@@ -87,11 +88,18 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children, onViewChange }: DashboardLayoutProps) {
   const [activeItem, setActiveItem] = useState("Overview");
   const [showWalletDialog, setShowWalletDialog] = useState(false);
+  const [showNewTrade, setShowNewTrade] = useState(false);
   const navigate = useNavigate();
 
   const handleMenuClick = (title: string, url: string) => {
     setActiveItem(title);
     onViewChange(url);
+    setShowNewTrade(false);
+  };
+
+  const handleNewTrade = () => {
+    setShowNewTrade(true);
+    setActiveItem("");
   };
 
   const handleLogout = async () => {
@@ -152,7 +160,7 @@ export function DashboardLayout({ children, onViewChange }: DashboardLayoutProps
                           </SidebarMenuButton>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" className="w-48">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={handleNewTrade}>
                             New Trade
                           </DropdownMenuItem>
                           <DropdownMenuItem>
@@ -207,7 +215,7 @@ export function DashboardLayout({ children, onViewChange }: DashboardLayoutProps
             </div>
           </div>
           <main className="p-6">
-            {children}
+            {showNewTrade ? <TradeExecutionModal /> : children}
           </main>
         </div>
       </div>
