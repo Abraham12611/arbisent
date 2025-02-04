@@ -2,26 +2,26 @@ export interface EmailPreferences {
   marketing: boolean;
   trade_alerts: boolean;
   security_notifications: boolean;
-  [key: string]: boolean; // Add index signature
+  [key: string]: boolean;
 }
 
 export interface WalletAddress {
   address: string;
   isDefault: boolean;
-  [key: string]: string | boolean; // Add index signature
+  [key: string]: string | boolean;
 }
 
 export interface WalletAddresses {
   phantom?: WalletAddress;
   metamask?: WalletAddress;
-  [key: string]: WalletAddress | undefined; // Add index signature
+  [key: string]: WalletAddress | undefined;
 }
 
 export interface PrivacySettings {
   share_trading_analytics: boolean;
   collect_usage_data: boolean;
   public_profile: boolean;
-  [key: string]: boolean; // Add index signature
+  [key: string]: boolean;
 }
 
 export interface TradingPreferences {
@@ -30,20 +30,20 @@ export interface TradingPreferences {
     default_stop_loss_percentage: number;
     default_take_profit_percentage: number;
     max_position_size_usd: number;
-    [key: string]: number; // Add index signature
+    [key: string]: number;
   };
   interface_preferences: {
     chart_type: string;
     default_timeframe: string;
     layout: string;
-    [key: string]: string; // Add index signature
+    [key: string]: string;
   };
-  [key: string]: any; // Add index signature
+  [key: string]: any;
 }
 
 export interface ProfileFormValues {
   username: string;
   avatar_url: string;
   email_preferences: EmailPreferences;
-  [key: string]: string | EmailPreferences; // Add index signature
+  [key: string]: string | EmailPreferences;
 }
