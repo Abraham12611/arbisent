@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Sidebar, 
   SidebarContent, 
@@ -96,23 +96,40 @@ export function DashboardLayout({ children, onViewChange }: DashboardLayoutProps
   const [showWalletDialog, setShowWalletDialog] = useState(false);
   const [showNewTrade, setShowNewTrade] = useState(false);
   const [isChatsOpen, setIsChatsOpen] = useState(false);
+  const [selectedChatId, setSelectedChatId] = useState<string | undefined>();
+  const [recentChats, setRecentChats] = useState<any[]>([]);
   const navigate = useNavigate();
 
-  // Mock chat history - in a real app, this would come from your database
-  const recentChats = [
-    { id: 1, title: "Arbitrage Strategy Discussion", date: "2024-02-10" },
-    { id: 2, title: "Market Analysis", date: "2024-02-09" },
-    { id: 3, title: "Risk Management", date: "2024-02-08" }
-  ];
+  useEffect(() => {
+    loadRecentChats();
+  }, []);
+
+  const loadRecentChats = async () => {
+    try {
+      const { data: chats, error } = await supabase
+        .from('chats')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      setRecentChats(chats || []);
+    } catch (error) {
+      console.error('Error loading recent chats:', error);
+      toast.error("Failed to load recent chats");
+    }
+  };
 
   const handleMenuClick = (title: string, url: string) => {
     setActiveItem(title);
     onViewChange(url);
     setShowNewTrade(false);
+    setSelectedChatId(undefined);
   };
 
   const handleNewTrade = () => {
     setShowNewTrade(true);
+    setSelectedChatId(undefined);
     setActiveItem("");
   };
 
@@ -131,10 +148,9 @@ export function DashboardLayout({ children, onViewChange }: DashboardLayoutProps
     handleMenuClick("Settings", "settings");
   };
 
-  const handleChatSelect = (chatId: number) => {
-    // Here you would implement the logic to load the selected chat
-    console.log("Selected chat:", chatId);
+  const handleChatSelect = (chatId: string) => {
     setShowNewTrade(true);
+    setSelectedChatId(chatId);
     setActiveItem("");
   };
 
@@ -215,7 +231,9 @@ export function DashboardLayout({ children, onViewChange }: DashboardLayoutProps
                               className="pl-9 text-sm"
                             >
                               <span className="truncate">{chat.title}</span>
-                              <span className="ml-auto text-xs text-gray-500">{chat.date}</span>
+                              <span className="ml-auto text-xs text-gray-500">
+                                {new Date(chat.created_at).toLocaleDateString()}
+                              </span>
                             </SidebarMenuButton>
                           ))}
                         </CollapsibleContent>
@@ -264,7 +282,7 @@ export function DashboardLayout({ children, onViewChange }: DashboardLayoutProps
             </div>
           </div>
           <main className="p-6">
-            {showNewTrade ? <TradeExecutionModal /> : children}
+            {showNewTrade ? <TradeExecutionModal chatId={selectedChatId} /> : children}
           </main>
         </div>
       </div>

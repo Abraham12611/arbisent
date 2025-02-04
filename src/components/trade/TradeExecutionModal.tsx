@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,42 +10,108 @@ interface ChatMessage {
   content: string;
 }
 
-export const TradeExecutionModal = () => {
+interface TradeExecutionModalProps {
+  chatId?: string;
+}
+
+export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
   const [prompt, setPrompt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const [currentChatId, setCurrentChatId] = useState<string | undefined>(chatId);
+
+  useEffect(() => {
+    if (chatId) {
+      loadChatHistory(chatId);
+    }
+  }, [chatId]);
+
+  const loadChatHistory = async (id: string) => {
+    try {
+      const { data: messages, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('chat_id', id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      if (messages) {
+        setChatHistory(messages.map(msg => ({
+          role: msg.role as 'user' | 'assistant',
+          content: msg.content
+        })));
+      }
+    } catch (error: any) {
+      console.error('Error loading chat history:', error);
+      toast.error("Failed to load chat history");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
 
-    // Add user message to chat history
     const userMessage: ChatMessage = { role: 'user', content: prompt.trim() };
-    const updatedHistory = [...chatHistory, userMessage];
     
-    // Limit chat history to last 10 messages
-    const limitedHistory = updatedHistory.slice(-10);
-    setChatHistory(limitedHistory);
-    
-    setIsLoading(true);
     try {
+      setIsLoading(true);
+
+      // Create a new chat if we don't have one
+      if (!currentChatId) {
+        const { data: chat, error: chatError } = await supabase
+          .from('chats')
+          .insert([{ 
+            title: prompt.slice(0, 50) + (prompt.length > 50 ? '...' : ''),
+          }])
+          .select()
+          .single();
+
+        if (chatError) throw chatError;
+        setCurrentChatId(chat.id);
+      }
+
+      // Insert user message
+      const { error: messageError } = await supabase
+        .from('chat_messages')
+        .insert([{
+          chat_id: currentChatId,
+          role: 'user',
+          content: prompt.trim()
+        }]);
+
+      if (messageError) throw messageError;
+
+      // Update chat history immediately with user message
+      const updatedHistory = [...chatHistory, userMessage];
+      setChatHistory(updatedHistory);
+      
+      // Call AI function
       const { data, error } = await supabase.functions.invoke('chat', {
         body: { 
           prompt: prompt.trim(),
-          chatHistory: limitedHistory 
+          chatHistory: updatedHistory.slice(-10) // Send last 10 messages for context
         }
       });
 
       if (error) throw error;
       
-      // Add AI response to chat history
+      // Insert AI response
       const aiMessage: ChatMessage = { role: 'assistant', content: data.answer };
-      setChatHistory([...limitedHistory, aiMessage]);
+      await supabase
+        .from('chat_messages')
+        .insert([{
+          chat_id: currentChatId,
+          role: 'assistant',
+          content: data.answer
+        }]);
       
+      // Update chat history with AI response
+      setChatHistory([...updatedHistory, aiMessage]);
       setPrompt(""); // Clear input after successful submission
       toast.success("Response received!");
     } catch (error: any) {
-      console.error('Error calling chat function:', error);
+      console.error('Error in chat function:', error);
       toast.error(error.message || "Failed to get response");
     } finally {
       setIsLoading(false);
@@ -68,7 +134,6 @@ export const TradeExecutionModal = () => {
         </p>
       </div>
 
-      {/* Chat History */}
       {chatHistory.length > 0 && (
         <div className="mb-4 space-y-4 max-h-[400px] overflow-y-auto">
           {chatHistory.map((message, index) => (
