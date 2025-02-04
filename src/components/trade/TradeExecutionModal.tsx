@@ -37,7 +37,7 @@ export const TradeExecutionModal = () => {
               placeholder="Ask the hive anything..."
               className="w-full bg-transparent border-0 focus-visible:ring-0 focus-visible:outline-none text-base py-6 pr-32 min-h-[120px] resize-none"
             />
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
+            <div className="absolute bottom-2 right-2 flex items-center gap-2">
               <Button 
                 type="button"
                 variant="ghost" 
