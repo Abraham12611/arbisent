@@ -10,7 +10,8 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarHeader,
-  SidebarTrigger
+  SidebarTrigger,
+  SidebarSeparator
 } from "@/components/ui/sidebar";
 import { 
   LayoutDashboard, 
@@ -21,7 +22,9 @@ import {
   Wallet,
   LogOut,
   UserCog,
-  WalletCards
+  WalletCards,
+  Plus,
+  ChevronDown
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -130,6 +133,29 @@ export function DashboardLayout({ children, onViewChange }: DashboardLayoutProps
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
+                  <SidebarSeparator />
+                  <SidebarMenuItem>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <SidebarMenuButton>
+                          <Plus className="mr-2" />
+                          <span>Create New</span>
+                          <ChevronDown className="ml-auto h-4 w-4" />
+                        </SidebarMenuButton>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-48">
+                        <DropdownMenuItem>
+                          New Trade
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          New Alert
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          New Strategy
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </SidebarMenuItem>
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
