@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -32,11 +31,11 @@ export const TradeExecutionModal = () => {
       <Card className="bg-[#151822]/80 border-gray-800">
         <CardContent className="p-4">
           <form onSubmit={handleSubmit} className="relative">
-            <Input
+            <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Ask the hive anything..."
-              className="w-full bg-transparent border-0 focus-visible:ring-0 text-base py-6 pr-32"
+              className="w-full bg-transparent border-0 focus-visible:ring-0 focus-visible:outline-none text-base py-6 pr-32 min-h-[120px] resize-none"
             />
             <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
               <Button 
