@@ -12,8 +12,6 @@ export interface WalletAddress {
 }
 
 export interface WalletAddresses {
-  phantom?: WalletAddress;
-  metamask?: WalletAddress;
   [key: string]: WalletAddress | undefined;
 }
 
