@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 .replit
 replit.nix
+instructions/
+.gitignore
