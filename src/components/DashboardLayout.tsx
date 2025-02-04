@@ -25,7 +25,8 @@ import {
   WalletCards,
   Plus,
   ChevronDown,
-  MessageSquare
+  MessageSquare,
+  Trash2
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -40,6 +41,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Collapsible,
@@ -47,6 +50,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -98,6 +102,8 @@ export function DashboardLayout({ children, onViewChange }: DashboardLayoutProps
   const [isChatsOpen, setIsChatsOpen] = useState(false);
   const [selectedChatId, setSelectedChatId] = useState<string | undefined>();
   const [recentChats, setRecentChats] = useState<any[]>([]);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [chatToDelete, setChatToDelete] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -117,6 +123,34 @@ export function DashboardLayout({ children, onViewChange }: DashboardLayoutProps
     } catch (error) {
       console.error('Error loading recent chats:', error);
       toast.error("Failed to load recent chats");
+    }
+  };
+
+  const handleDeleteChat = async (chatId: string) => {
+    try {
+      const { error } = await supabase
+        .from('chats')
+        .delete()
+        .eq('id', chatId);
+
+      if (error) throw error;
+
+      // Refresh the chat list
+      await loadRecentChats();
+      
+      // If the deleted chat was selected, clear the selection
+      if (selectedChatId === chatId) {
+        setSelectedChatId(undefined);
+        setShowNewTrade(false);
+      }
+
+      toast.success("Chat deleted successfully");
+    } catch (error) {
+      console.error('Error deleting chat:', error);
+      toast.error("Failed to delete chat");
+    } finally {
+      setShowDeleteDialog(false);
+      setChatToDelete(null);
     }
   };
 
@@ -152,6 +186,12 @@ export function DashboardLayout({ children, onViewChange }: DashboardLayoutProps
     setShowNewTrade(true);
     setSelectedChatId(chatId);
     setActiveItem("");
+  };
+
+  const confirmDelete = (chatId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent chat selection when clicking delete
+    setChatToDelete(chatId);
+    setShowDeleteDialog(true);
   };
 
   return (
@@ -225,16 +265,26 @@ export function DashboardLayout({ children, onViewChange }: DashboardLayoutProps
                         </CollapsibleTrigger>
                         <CollapsibleContent className="space-y-2 mt-2">
                           {recentChats.map((chat) => (
-                            <SidebarMenuButton
+                            <div
                               key={chat.id}
-                              onClick={() => handleChatSelect(chat.id)}
-                              className="pl-9 text-sm"
+                              className="group relative"
                             >
-                              <span className="truncate">{chat.title}</span>
-                              <span className="ml-auto text-xs text-gray-500">
-                                {new Date(chat.created_at).toLocaleDateString()}
-                              </span>
-                            </SidebarMenuButton>
+                              <SidebarMenuButton
+                                onClick={() => handleChatSelect(chat.id)}
+                                className="pl-9 text-sm w-full pr-8"
+                              >
+                                <span className="truncate">{chat.title}</span>
+                                <span className="ml-auto text-xs text-gray-500">
+                                  {new Date(chat.created_at).toLocaleDateString()}
+                                </span>
+                              </SidebarMenuButton>
+                              <button
+                                onClick={(e) => confirmDelete(chat.id, e)}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:text-red-500"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
                           ))}
                         </CollapsibleContent>
                       </Collapsible>
@@ -285,16 +335,44 @@ export function DashboardLayout({ children, onViewChange }: DashboardLayoutProps
             {showNewTrade ? <TradeExecutionModal chatId={selectedChatId} /> : children}
           </main>
         </div>
-      </div>
 
-      <Dialog open={showWalletDialog} onOpenChange={setShowWalletDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Connect Your Wallets</DialogTitle>
-          </DialogHeader>
-          <WalletConnector onClose={() => setShowWalletDialog(false)} />
-        </DialogContent>
-      </Dialog>
+        <Dialog open={showWalletDialog} onOpenChange={setShowWalletDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Connect Your Wallets</DialogTitle>
+            </DialogHeader>
+            <WalletConnector onClose={() => setShowWalletDialog(false)} />
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Chat</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this chat? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteDialog(false);
+                  setChatToDelete(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => chatToDelete && handleDeleteChat(chatToDelete)}
+              >
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </SidebarProvider>
   );
 }
