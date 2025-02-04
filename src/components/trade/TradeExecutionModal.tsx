@@ -56,8 +56,10 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
     
     try {
       setIsLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
       
+      // Get the current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
       if (!user) throw new Error("No user found");
 
       // Create a new chat if we don't have one
@@ -72,6 +74,8 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
           .single();
 
         if (chatError) throw chatError;
+        if (!chat) throw new Error("Failed to create chat");
+        
         setCurrentChatId(chat.id);
       }
 
