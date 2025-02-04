@@ -2,14 +2,34 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const TradeExecutionModal = () => {
   const [prompt, setPrompt] = useState("");
+  const [response, setResponse] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle trade execution logic here
-    console.log("Trade prompt:", prompt);
+    if (!prompt.trim()) return;
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('chat', {
+        body: { prompt: prompt.trim() }
+      });
+
+      if (error) throw error;
+      
+      setResponse(data.answer);
+      toast.success("Response received!");
+    } catch (error: any) {
+      console.error('Error calling chat function:', error);
+      toast.error(error.message || "Failed to get response");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -43,6 +63,7 @@ export const TradeExecutionModal = () => {
                 variant="ghost" 
                 size="sm"
                 className="text-gray-400 hover:text-white hover:bg-transparent"
+                disabled={isLoading}
               >
                 Open AI
               </Button>
@@ -50,6 +71,7 @@ export const TradeExecutionModal = () => {
                 type="submit"
                 size="icon"
                 className="bg-transparent hover:bg-white/10 text-white"
+                disabled={isLoading}
               >
                 <Send className="h-4 w-4" />
               </Button>
@@ -57,6 +79,14 @@ export const TradeExecutionModal = () => {
           </form>
         </CardContent>
       </Card>
+
+      {response && (
+        <Card className="mt-4 bg-[#151822]/50 border-gray-800">
+          <CardContent className="p-4">
+            <div className="text-gray-200 whitespace-pre-wrap">{response}</div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-2 gap-4 mt-8">
         <Card className="bg-[#151822]/50 border-gray-800 hover:border-gray-700 transition-colors cursor-pointer">
