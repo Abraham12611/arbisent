@@ -57,12 +57,10 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
     try {
       setIsLoading(true);
       
-      // Get the current user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
       if (!user) throw new Error("No user found");
 
-      // Create a new chat if we don't have one
       if (!currentChatId) {
         const { data: chat, error: chatError } = await supabase
           .from('chats')
@@ -79,7 +77,6 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
         setCurrentChatId(chat.id);
       }
 
-      // Insert user message
       const { error: messageError } = await supabase
         .from('chat_messages')
         .insert([{
@@ -90,21 +87,18 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
 
       if (messageError) throw messageError;
 
-      // Update chat history immediately with user message
       const updatedHistory = [...chatHistory, userMessage];
       setChatHistory(updatedHistory);
       
-      // Call AI function
       const { data, error } = await supabase.functions.invoke('chat', {
         body: { 
           prompt: prompt.trim(),
-          chatHistory: updatedHistory.slice(-10) // Send last 10 messages for context
+          chatHistory: updatedHistory.slice(-10)
         }
       });
 
       if (error) throw error;
       
-      // Insert AI response
       const aiMessage: ChatMessage = { role: 'assistant', content: data.answer };
       await supabase
         .from('chat_messages')
@@ -114,9 +108,8 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
           content: data.answer
         }]);
       
-      // Update chat history with AI response
       setChatHistory([...updatedHistory, aiMessage]);
-      setPrompt(""); // Clear input after successful submission
+      setPrompt("");
       toast.success("Response received!");
     } catch (error: any) {
       console.error('Error in chat function:', error);
@@ -166,7 +159,9 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Ask the hive anything..."
-              className="w-full bg-transparent border-0 focus-visible:ring-0 focus-visible:outline-none text-base py-6 pr-32 min-h-[120px] resize-none"
+              className={`w-full bg-transparent border-0 focus-visible:ring-0 focus-visible:outline-none text-base py-6 pr-32 resize-none ${
+                chatHistory.length > 0 ? 'min-h-[60px]' : 'min-h-[120px]'
+              }`}
             />
             <div className="absolute bottom-2 right-2 flex items-center gap-2">
               <Button 
@@ -191,32 +186,34 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 gap-4 mt-8">
-        <Card className="bg-[#151822]/50 border-gray-800 hover:border-gray-700 transition-colors cursor-pointer">
-          <CardContent className="p-4">
-            <h3 className="text-sm font-medium mb-1 text-gray-400">Trending</h3>
-            <p className="text-sm text-gray-500">Search the trending tokens</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-[#151822]/50 border-gray-800 hover:border-gray-700 transition-colors cursor-pointer">
-          <CardContent className="p-4">
-            <h3 className="text-sm font-medium mb-1 text-gray-400">Stake</h3>
-            <p className="text-sm text-gray-500">Stake Sol</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-[#151822]/50 border-gray-800 hover:border-gray-700 transition-colors cursor-pointer">
-          <CardContent className="p-4">
-            <h3 className="text-sm font-medium mb-1 text-gray-400">Trade</h3>
-            <p className="text-sm text-gray-500">Swap on Jupiter</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-[#151822]/50 border-gray-800 hover:border-gray-700 transition-colors cursor-pointer">
-          <CardContent className="p-4">
-            <h3 className="text-sm font-medium mb-1 text-gray-400">Knowledge</h3>
-            <p className="text-sm text-gray-500">Get developer docs for protocols</p>
-          </CardContent>
-        </Card>
-      </div>
+      {chatHistory.length === 0 && (
+        <div className="grid grid-cols-2 gap-4 mt-8">
+          <Card className="bg-[#151822]/50 border-gray-800 hover:border-gray-700 transition-colors cursor-pointer">
+            <CardContent className="p-4">
+              <h3 className="text-sm font-medium mb-1 text-gray-400">Trending</h3>
+              <p className="text-sm text-gray-500">Search the trending tokens</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-[#151822]/50 border-gray-800 hover:border-gray-700 transition-colors cursor-pointer">
+            <CardContent className="p-4">
+              <h3 className="text-sm font-medium mb-1 text-gray-400">Stake</h3>
+              <p className="text-sm text-gray-500">Stake Sol</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-[#151822]/50 border-gray-800 hover:border-gray-700 transition-colors cursor-pointer">
+            <CardContent className="p-4">
+              <h3 className="text-sm font-medium mb-1 text-gray-400">Trade</h3>
+              <p className="text-sm text-gray-500">Swap on Jupiter</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-[#151822]/50 border-gray-800 hover:border-gray-700 transition-colors cursor-pointer">
+            <CardContent className="p-4">
+              <h3 className="text-sm font-medium mb-1 text-gray-400">Knowledge</h3>
+              <p className="text-sm text-gray-500">Get developer docs for protocols</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
