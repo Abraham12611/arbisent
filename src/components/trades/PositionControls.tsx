@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { TradeExecutionModal } from "../trade/TradeExecutionModal";
 
 interface PositionControlsProps {
   totalPositions: number;
@@ -15,7 +14,6 @@ export function PositionControls({ totalPositions, totalValue }: PositionControl
   return (
     <div className="mb-4 flex items-center justify-between">
       <div className="space-x-2">
-        <TradeExecutionModal />
         <Button variant="outline" onClick={handleCloseAll}>Close All</Button>
       </div>
       <div className="flex items-center space-x-4">
