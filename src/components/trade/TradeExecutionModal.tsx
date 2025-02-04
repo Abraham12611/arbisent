@@ -14,7 +14,7 @@ export const TradeExecutionModal = () => {
   };
 
   return (
-    <div className="flex flex-col h-full max-w-4xl mx-auto">
+    <div className="flex flex-col h-full max-w-3xl mx-auto justify-center">
       <div className="flex flex-col items-center justify-center mb-8 text-center">
         <img 
           src="/lovable-uploads/998ad3dc-284b-4f48-b8db-74c80e24495a.png" 
