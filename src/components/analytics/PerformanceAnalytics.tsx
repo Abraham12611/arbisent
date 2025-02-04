@@ -113,6 +113,13 @@ export const PerformanceAnalytics = ({ dateRange }: { dateRange?: { from: Date; 
     );
   }
 
+  const formatValue = (value: any): string => {
+    if (typeof value === 'number') {
+      return value.toFixed(1);
+    }
+    return String(value);
+  };
+
   const chartConfig = {
     success: {
       theme: {
@@ -174,7 +181,7 @@ export const PerformanceAnalytics = ({ dateRange }: { dateRange?: { from: Date; 
                                     Success Rate
                                   </span>
                                   <span className="font-bold">
-                                    {payload[0].value.toFixed(1)}%
+                                    {formatValue(payload[0].value)}%
                                   </span>
                                 </div>
                               </div>
@@ -263,7 +270,7 @@ export const PerformanceAnalytics = ({ dateRange }: { dateRange?: { from: Date; 
                                     Volume
                                   </span>
                                   <span className="font-bold">
-                                    {payload[0].value.toFixed(2)}
+                                    {formatValue(payload[0].value)}
                                   </span>
                                 </div>
                               </div>
