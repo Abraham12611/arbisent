@@ -133,32 +133,41 @@ export function DashboardLayout({ children, onViewChange }: DashboardLayoutProps
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
-                  <SidebarSeparator />
-                  <SidebarMenuItem>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <SidebarMenuButton>
-                          <Plus className="mr-2" />
-                          <span>Create New</span>
-                          <ChevronDown className="ml-auto h-4 w-4" />
-                        </SidebarMenuButton>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-48">
-                        <DropdownMenuItem>
-                          New Trade
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          New Alert
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          New Strategy
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </SidebarMenuItem>
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
+
+            <div className="mt-6">
+              <SidebarSeparator className="mb-6" />
+              <SidebarGroup>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <SidebarMenuButton>
+                            <Plus className="mr-2" />
+                            <span>Create New</span>
+                            <ChevronDown className="ml-auto h-4 w-4" />
+                          </SidebarMenuButton>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-48">
+                          <DropdownMenuItem>
+                            New Trade
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            New Alert
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            New Strategy
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            </div>
           </SidebarContent>
         </Sidebar>
 
