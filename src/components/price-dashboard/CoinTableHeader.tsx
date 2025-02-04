@@ -44,7 +44,6 @@ export const CoinTableHeader = ({ onSort, sortConfig }: CoinTableHeaderProps) =>
         <th className="px-6 py-3 cursor-pointer" onClick={() => onSort("total_volume")}>
           Volume (24h) {renderSortIcon("total_volume")}
         </th>
-        <th className="px-6 py-3">Actions</th>
       </tr>
     </thead>
   );

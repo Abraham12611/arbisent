@@ -1,5 +1,4 @@
 import { ArrowDown, ArrowUp } from "lucide-react";
-import { TradeExecutionModal } from "../trade/TradeExecutionModal";
 
 interface CoinRowProps {
   coin: {
@@ -38,9 +37,6 @@ export const CoinRow = ({ coin }: CoinRowProps) => {
           {coin.priceChange24h >= 0 ? <ArrowUp className="w-4 h-4 mr-1" /> : <ArrowDown className="w-4 h-4 mr-1" />}
           {formatPercentage(coin.priceChange24h)}
         </span>
-      </td>
-      <td className="px-4 py-4">
-        <TradeExecutionModal pair={coin.symbol} initialPrice={coin.price} />
       </td>
     </tr>
   );
