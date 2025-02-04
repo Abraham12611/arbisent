@@ -13,13 +13,23 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt } = await req.json()
+    const { prompt, chatHistory } = await req.json()
 
     if (!prompt) {
       throw new Error('Prompt is required')
     }
 
     console.log('Received prompt:', prompt)
+    console.log('Chat history:', chatHistory)
+
+    // Prepare messages array with system message and chat history
+    const messages = [
+      {
+        role: 'system',
+        content: 'You are ArbiSent, an AI assistant specialized in cryptocurrency trading and arbitrage. Help users understand market opportunities, analyze trends, and make informed trading decisions. Be concise and precise in your responses.'
+      },
+      ...chatHistory // Include previous conversation context
+    ]
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -29,13 +39,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are ArbiSent, an AI assistant specialized in cryptocurrency trading and arbitrage. Help users understand market opportunities, analyze trends, and make informed trading decisions. Be concise and precise in your responses.'
-          },
-          { role: 'user', content: prompt }
-        ],
+        messages: messages,
       }),
     })
 

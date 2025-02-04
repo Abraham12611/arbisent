@@ -5,24 +5,44 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export const TradeExecutionModal = () => {
   const [prompt, setPrompt] = useState("");
-  const [response, setResponse] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
 
+    // Add user message to chat history
+    const userMessage: ChatMessage = { role: 'user', content: prompt.trim() };
+    const updatedHistory = [...chatHistory, userMessage];
+    
+    // Limit chat history to last 10 messages
+    const limitedHistory = updatedHistory.slice(-10);
+    setChatHistory(limitedHistory);
+    
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('chat', {
-        body: { prompt: prompt.trim() }
+        body: { 
+          prompt: prompt.trim(),
+          chatHistory: limitedHistory 
+        }
       });
 
       if (error) throw error;
       
-      setResponse(data.answer);
+      // Add AI response to chat history
+      const aiMessage: ChatMessage = { role: 'assistant', content: data.answer };
+      setChatHistory([...limitedHistory, aiMessage]);
+      
+      setPrompt(""); // Clear input after successful submission
       toast.success("Response received!");
     } catch (error: any) {
       console.error('Error calling chat function:', error);
@@ -47,6 +67,24 @@ export const TradeExecutionModal = () => {
           Orchestrate a hive mind of DeFi Agents to act on Solana
         </p>
       </div>
+
+      {/* Chat History */}
+      {chatHistory.length > 0 && (
+        <div className="mb-4 space-y-4 max-h-[400px] overflow-y-auto">
+          {chatHistory.map((message, index) => (
+            <Card key={index} className={`bg-[#151822]/${message.role === 'user' ? '80' : '50'} border-gray-800`}>
+              <CardContent className="p-4">
+                <div className="flex items-start gap-2">
+                  <span className="font-semibold text-sm text-gray-400">
+                    {message.role === 'user' ? 'You:' : 'AI:'}
+                  </span>
+                  <div className="text-gray-200 whitespace-pre-wrap">{message.content}</div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <Card className="bg-[#151822]/80 border-gray-800">
         <CardContent className="p-4">
@@ -79,14 +117,6 @@ export const TradeExecutionModal = () => {
           </form>
         </CardContent>
       </Card>
-
-      {response && (
-        <Card className="mt-4 bg-[#151822]/50 border-gray-800">
-          <CardContent className="p-4">
-            <div className="text-gray-200 whitespace-pre-wrap">{response}</div>
-          </CardContent>
-        </Card>
-      )}
 
       <div className="grid grid-cols-2 gap-4 mt-8">
         <Card className="bg-[#151822]/50 border-gray-800 hover:border-gray-700 transition-colors cursor-pointer">
