@@ -24,7 +24,8 @@ import {
   UserCog,
   WalletCards,
   Plus,
-  ChevronDown
+  ChevronDown,
+  MessageSquare
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -40,6 +41,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -89,7 +95,15 @@ export function DashboardLayout({ children, onViewChange }: DashboardLayoutProps
   const [activeItem, setActiveItem] = useState("Overview");
   const [showWalletDialog, setShowWalletDialog] = useState(false);
   const [showNewTrade, setShowNewTrade] = useState(false);
+  const [isChatsOpen, setIsChatsOpen] = useState(false);
   const navigate = useNavigate();
+
+  // Mock chat history - in a real app, this would come from your database
+  const recentChats = [
+    { id: 1, title: "Arbitrage Strategy Discussion", date: "2024-02-10" },
+    { id: 2, title: "Market Analysis", date: "2024-02-09" },
+    { id: 3, title: "Risk Management", date: "2024-02-08" }
+  ];
 
   const handleMenuClick = (title: string, url: string) => {
     setActiveItem(title);
@@ -115,6 +129,13 @@ export function DashboardLayout({ children, onViewChange }: DashboardLayoutProps
 
   const handleProfileSettings = () => {
     handleMenuClick("Settings", "settings");
+  };
+
+  const handleChatSelect = (chatId: number) => {
+    // Here you would implement the logic to load the selected chat
+    console.log("Selected chat:", chatId);
+    setShowNewTrade(true);
+    setActiveItem("");
   };
 
   return (
@@ -171,6 +192,34 @@ export function DashboardLayout({ children, onViewChange }: DashboardLayoutProps
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
+                    </SidebarMenuItem>
+
+                    <SidebarMenuItem>
+                      <Collapsible open={isChatsOpen} onOpenChange={setIsChatsOpen}>
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton>
+                            <MessageSquare className="mr-2" />
+                            <span>Recent Chats</span>
+                            <ChevronDown 
+                              className={`ml-auto h-4 w-4 transform transition-transform duration-200 ${
+                                isChatsOpen ? 'rotate-180' : ''
+                              }`} 
+                            />
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="space-y-2 mt-2">
+                          {recentChats.map((chat) => (
+                            <SidebarMenuButton
+                              key={chat.id}
+                              onClick={() => handleChatSelect(chat.id)}
+                              className="pl-9 text-sm"
+                            >
+                              <span className="truncate">{chat.title}</span>
+                              <span className="ml-auto text-xs text-gray-500">{chat.date}</span>
+                            </SidebarMenuButton>
+                          ))}
+                        </CollapsibleContent>
+                      </Collapsible>
                     </SidebarMenuItem>
                   </SidebarMenu>
                 </SidebarGroupContent>
