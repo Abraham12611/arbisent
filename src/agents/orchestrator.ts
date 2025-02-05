@@ -8,6 +8,9 @@ import ResearchAgent from "./research";
 import StrategyAgent from "./strategy";
 import ExecutionAgent from "./execution";
 
+// Define the allowed node names in the graph
+type WorkflowNode = "__start__" | "__end__" | "research" | "strategy" | "execution";
+
 interface WorkflowState extends StateDefinition {
   query: string;
   context: any;
@@ -24,7 +27,7 @@ interface WorkflowState extends StateDefinition {
 }
 
 class ArbiSentOrchestrator {
-  private graph: StateGraph;
+  private graph: StateGraph<WorkflowState, WorkflowNode>;
   private researchAgent: ResearchAgent;
   private strategyAgent: StrategyAgent;
   private executionAgent: ExecutionAgent;
@@ -61,14 +64,8 @@ class ArbiSentOrchestrator {
     this.strategyAgent = new StrategyAgent(llm);
     this.executionAgent = new ExecutionAgent({ solanaKit, llm });
 
-    // Initialize StateGraph with proper configuration
-    this.graph = new StateGraph({
-      channels: {
-        research: "research",
-        strategy: "strategy",
-        execution: "execution"
-      }
-    });
+    // Initialize StateGraph
+    this.graph = new StateGraph<WorkflowState, WorkflowNode>({});
 
     this.setupWorkflow();
   }
@@ -82,8 +79,10 @@ class ArbiSentOrchestrator {
           urls: state.context.urls,
           marketData: state.context.marketData
         });
-        state.data = { ...state.data, research: result };
-        return state;
+        return {
+          ...state,
+          data: { ...state.data, research: result }
+        };
       }
     });
 
@@ -113,12 +112,18 @@ class ArbiSentOrchestrator {
       }
     });
 
-    // Define edges
+    // Define edges starting from __start__
+    this.graph.addEdge("__start__", "research");
     this.graph.addEdge("research", "strategy");
     this.graph.addEdge("strategy", "execution");
     this.graph.addEdge("execution", END);
 
     // Add conditional edges for error handling
+    this.graph.addConditionalEdges(
+      "__start__",
+      (state: WorkflowState) => "research"
+    );
+
     this.graph.addConditionalEdges(
       "research",
       (state: WorkflowState) => {
@@ -153,7 +158,7 @@ class ArbiSentOrchestrator {
       query: "arbitrage_execution",
       context: input,
       history: [],
-      activeAgent: "start",
+      activeAgent: "__start__",
       status: "running",
       data: {}
     };
@@ -161,8 +166,11 @@ class ArbiSentOrchestrator {
     try {
       // Run the workflow
       const app = this.graph.compile();
-      const result = await app.invoke(initialState);
-      return result as WorkflowState;
+      const result = await app.invoke({
+        state: initialState,
+        config: {}
+      });
+      return result.state as WorkflowState;
     } catch (error: any) {
       console.error("Workflow execution failed:", error);
       return {
@@ -177,4 +185,4 @@ class ArbiSentOrchestrator {
   }
 }
 
-export default ArbiSentOrchestrator; 
+export default ArbiSentOrchestrator;
