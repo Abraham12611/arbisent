@@ -63,24 +63,28 @@ class StrategyAgent {
       Market Sentiment:
       {sentiment}
 
-      Generate a comprehensive trading strategy following this exact JSON structure:
-      {
-        "name": "Strategy name",
-        "description": "Detailed strategy description",
-        "entryConditions": ["condition1", "condition2"],
-        "exitConditions": ["condition1", "condition2"],
-        "positionSize": "Position sizing recommendation",
-        "expectedReturn": "Expected return target",
-        "timeframe": "Recommended timeframe"
-      }
+      Generate a comprehensive trading strategy following this exact JSON structure, replacing the example values:
+
+      {formatInstructions}
 
       Ensure the response is valid JSON and follows this structure exactly.
     `);
 
+    const formatInstructions = `{
+      "name": "Strategy name",
+      "description": "Detailed strategy description",
+      "entryConditions": ["condition1", "condition2"],
+      "exitConditions": ["condition1", "condition2"],
+      "positionSize": "Position sizing recommendation",
+      "expectedReturn": "Expected return target",
+      "timeframe": "Recommended timeframe"
+    }`;
+
     const formattedPrompt = await prompt.format({
       marketData: JSON.stringify(input.marketData, null, 2),
       research: input.research.map(doc => doc.pageContent).join('\n\n'),
-      sentiment: JSON.stringify(input.sentiment, null, 2)
+      sentiment: JSON.stringify(input.sentiment, null, 2),
+      formatInstructions
     });
 
     const response = await this.llm.predict(formattedPrompt);
@@ -95,7 +99,7 @@ class StrategyAgent {
     strategy: any,
     input: { marketData: any; sentiment: any }
   ): Promise<RiskAssessment> {
-    const riskPrompt = PromptTemplate.fromTemplate(`
+    const prompt = PromptTemplate.fromTemplate(`
       Analyze the following trading strategy and market conditions for potential risks:
 
       Strategy:
@@ -107,21 +111,25 @@ class StrategyAgent {
       Sentiment:
       {sentiment}
 
-      Provide a risk assessment following this exact JSON structure:
-      {
-        "riskLevel": "high", // must be exactly "low", "medium", or "high"
-        "confidenceScore": 85, // number between 0 and 100
-        "potentialRisks": ["risk1", "risk2"],
-        "mitigationStrategies": ["strategy1", "strategy2"]
-      }
+      Provide a risk assessment following this exact JSON structure, replacing the example values:
+
+      {formatInstructions}
 
       Ensure the response is valid JSON and follows this structure exactly.
     `);
 
-    const formattedPrompt = await riskPrompt.format({
+    const formatInstructions = `{
+      "riskLevel": "high",
+      "confidenceScore": 85,
+      "potentialRisks": ["risk1", "risk2"],
+      "mitigationStrategies": ["strategy1", "strategy2"]
+    }`;
+
+    const formattedPrompt = await prompt.format({
       strategy: JSON.stringify(strategy, null, 2),
       marketData: JSON.stringify(input.marketData, null, 2),
-      sentiment: JSON.stringify(input.sentiment, null, 2)
+      sentiment: JSON.stringify(input.sentiment, null, 2),
+      formatInstructions
     });
 
     const response = await this.llm.predict(formattedPrompt);
