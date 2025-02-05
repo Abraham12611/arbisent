@@ -1,7 +1,17 @@
-import { describe, expect, test, beforeAll } from '@jest/globals';
+import { describe, expect, test, beforeAll, jest } from '@jest/globals';
 import { ChatOpenAI } from "@langchain/openai";
 import { SolanaAgentKit } from "solana-agent-kit";
 import ExecutionAgent from "../execution";
+
+// Mock SolanaAgentKit
+jest.mock('solana-agent-kit', () => {
+  return {
+    SolanaAgentKit: jest.fn().mockImplementation(() => ({
+      getTokenInfo: jest.fn().mockResolvedValue({ symbol: 'SOL', decimals: 9 }),
+      swapTokens: jest.fn().mockResolvedValue('mock_signature'),
+    }))
+  };
+});
 
 describe("ExecutionAgent", () => {
   let agent: ExecutionAgent;
@@ -22,7 +32,7 @@ describe("ExecutionAgent", () => {
     agent = new ExecutionAgent({ solanaKit, llm });
   });
 
-  test("should validate trade parameters", async () => {
+  test("should validate and execute trade parameters", async () => {
     const input = {
       strategy: {
         name: "Simple Arbitrage",
@@ -31,7 +41,7 @@ describe("ExecutionAgent", () => {
         exitConditions: ["After execution or timeout"]
       },
       parameters: {
-        side: 'buy',
+        side: 'buy' as const,
         asset: "So11111111111111111111111111111111111111112", // Wrapped SOL
         amount: 1,
         price: 100,
@@ -41,15 +51,22 @@ describe("ExecutionAgent", () => {
     };
 
     const result = await agent.process(input);
-    expect(result).toHaveProperty('status');
-    expect(result).toHaveProperty('metrics');
+    
+    expect(result).toMatchObject({
+      status: expect.any(String),
+      metrics: {
+        executionTime: expect.any(Number),
+        priceImpact: expect.any(Number),
+        fees: expect.any(Number)
+      }
+    });
   }, 60000);
 
   test("should handle invalid parameters", async () => {
     const input = {
       strategy: {},
       parameters: {
-        side: 'buy',
+        side: 'buy' as const,
         asset: "invalid_address",
         amount: -1,
         price: 0,
@@ -61,5 +78,29 @@ describe("ExecutionAgent", () => {
     const result = await agent.process(input);
     expect(result.status).toBe('failed');
     expect(result.error).toBeDefined();
-  });
+  }, 30000);
+
+  test("should handle network errors gracefully", async () => {
+    // Mock a network error
+    jest.spyOn(SolanaAgentKit.prototype, 'swapTokens')
+      .mockRejectedValueOnce(new Error('Network error'));
+
+    const input = {
+      strategy: {
+        name: "Test Strategy"
+      },
+      parameters: {
+        side: 'buy' as const,
+        asset: "So11111111111111111111111111111111111111112",
+        amount: 1,
+        price: 100,
+        slippage: 0.5,
+        dex: "Orca"
+      }
+    };
+
+    const result = await agent.process(input);
+    expect(result.status).toBe('failed');
+    expect(result.error).toContain('Network error');
+  }, 30000);
 }); 
