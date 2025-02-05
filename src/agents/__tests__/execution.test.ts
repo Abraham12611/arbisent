@@ -18,12 +18,11 @@ jest.mock('solana-agent-kit', () => {
         symbol: 'SOL', 
         decimals: 9 
       })),
-      trade: jest.fn().mockImplementation(async (
-        outputMint: PublicKey,
-        inputAmount: number,
-        inputMint?: PublicKey,
-        slippageBps?: number
-      ) => 'mock_signature'),
+      trade: jest.fn().mockReturnValue(Promise.resolve('mock_signature')),
+      getTokenDataByAddress: jest.fn().mockResolvedValue({ 
+        symbol: 'SOL', 
+        decimals: 9 
+      }),
     }))
   };
 });
@@ -98,7 +97,7 @@ describe("ExecutionAgent", () => {
 
   test("should handle network errors gracefully", async () => {
     // Mock a network error with proper typing
-    const mockTrade = jest.spyOn(mockSolanaKit, 'trade');
+    const mockTrade = mockSolanaKit.trade as jest.MockedFunction<typeof mockSolanaKit.trade>;
     mockTrade.mockRejectedValueOnce(new Error('Network error'));
 
     const input = {
