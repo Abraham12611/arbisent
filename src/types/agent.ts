@@ -1,11 +1,15 @@
 // Define common types used across agents
 export interface AgentInput {
-  urls?: string[];
-  marketData?: any;
-  sentiment?: any;
+  marketData?: {
+    asset: string;
+    [key: string]: any;
+  };
+  [key: string]: any;
 }
 
 export interface AgentOutput {
-  strategies?: any[];
-  analysis?: any;
+  success: boolean;
+  data?: any;
+  error?: string;
+  timestamp: number;
 } 
