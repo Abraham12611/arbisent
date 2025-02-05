@@ -1,20 +1,41 @@
 import { describe, expect, test, beforeAll, jest } from '@jest/globals';
 import { ChatOpenAI } from "@langchain/openai";
 import { SolanaAgentKit } from "solana-agent-kit";
+import { PublicKey } from "@solana/web3.js";
 import ExecutionAgent from "../execution";
 
-// Mock SolanaAgentKit
+// Define types for mocked functions
+interface TokenInfo {
+  symbol: string;
+  decimals: number;
+}
+
+interface SwapParams {
+  fromMint: PublicKey;
+  toMint: PublicKey;
+  amount: number;
+  slippage: number;
+  priorityFee?: number;
+}
+
+// Mock SolanaAgentKit with proper types
 jest.mock('solana-agent-kit', () => {
   return {
     SolanaAgentKit: jest.fn().mockImplementation(() => ({
-      getTokenInfo: jest.fn().mockResolvedValue({ symbol: 'SOL', decimals: 9 }),
-      swapTokens: jest.fn().mockResolvedValue('mock_signature'),
+      getTokenInfo: jest.fn().mockResolvedValue<TokenInfo>({ 
+        symbol: 'SOL', 
+        decimals: 9 
+      }),
+      swapTokens: jest.fn().mockImplementation(async (params: SwapParams): Promise<string> => {
+        return 'mock_signature';
+      }),
     }))
   };
 });
 
 describe("ExecutionAgent", () => {
   let agent: ExecutionAgent;
+  let mockSolanaKit: jest.Mocked<SolanaAgentKit>;
 
   beforeAll(() => {
     const llm = new ChatOpenAI({
@@ -23,13 +44,13 @@ describe("ExecutionAgent", () => {
       openAIApiKey: process.env.OPENAI_API_KEY,
     });
 
-    const solanaKit = new SolanaAgentKit(
+    mockSolanaKit = new SolanaAgentKit(
       process.env.SOLANA_PRIVATE_KEY!,
       process.env.RPC_URL!,
       process.env.OPENAI_API_KEY!
-    );
+    ) as jest.Mocked<SolanaAgentKit>;
 
-    agent = new ExecutionAgent({ solanaKit, llm });
+    agent = new ExecutionAgent({ solanaKit: mockSolanaKit, llm });
   });
 
   test("should validate and execute trade parameters", async () => {
@@ -81,9 +102,9 @@ describe("ExecutionAgent", () => {
   }, 30000);
 
   test("should handle network errors gracefully", async () => {
-    // Mock a network error
-    jest.spyOn(SolanaAgentKit.prototype, 'swapTokens')
-      .mockRejectedValueOnce(new Error('Network error'));
+    // Mock a network error with proper typing
+    const mockSwapTokens = jest.spyOn(mockSolanaKit, 'swapTokens');
+    mockSwapTokens.mockRejectedValueOnce(new Error('Network error'));
 
     const input = {
       strategy: {
