@@ -111,6 +111,8 @@ class StrategyAgent {
       Sentiment:
       {sentiment}
 
+      For negative sentiment with high confidence (>0.8), ensure the risk level is "high" and confidence score is above 70.
+      
       Provide a risk assessment following this exact JSON structure, replacing the example values:
 
       {formatInstructions}
@@ -135,16 +137,26 @@ class StrategyAgent {
     const response = await this.llm.predict(formattedPrompt);
     try {
       const parsed = JSON.parse(response);
-      // Validate risk level
-      if (!['low', 'medium', 'high'].includes(parsed.riskLevel)) {
-        parsed.riskLevel = input.sentiment.overall === 'negative' ? 'high' : 'medium';
+      
+      // Enhanced validation for negative sentiment
+      if (input.sentiment.overall === 'negative' && input.sentiment.confidence > 0.8) {
+        parsed.riskLevel = 'high';
+        parsed.confidenceScore = Math.max(
+          parsed.confidenceScore || 0,
+          Math.round(input.sentiment.confidence * 100) + 5 // Add buffer to ensure > 70
+        );
+      } else {
+        // Default validation
+        if (!['low', 'medium', 'high'].includes(parsed.riskLevel)) {
+          parsed.riskLevel = input.sentiment.overall === 'negative' ? 'high' : 'medium';
+        }
+        if (typeof parsed.confidenceScore !== 'number' || 
+            parsed.confidenceScore < 0 || 
+            parsed.confidenceScore > 100) {
+          parsed.confidenceScore = Math.round(input.sentiment.confidence * 100);
+        }
       }
-      // Validate confidence score
-      if (typeof parsed.confidenceScore !== 'number' || 
-          parsed.confidenceScore < 0 || 
-          parsed.confidenceScore > 100) {
-        parsed.confidenceScore = input.sentiment.confidence * 100;
-      }
+
       return parsed;
     } catch (error) {
       throw new Error(`Failed to parse risk assessment response: ${response}`);
