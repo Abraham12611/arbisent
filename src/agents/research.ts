@@ -3,6 +3,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { VectorStore } from "@langchain/core/vectorstores";
 import axios from "axios";
 import { AgentInput, AgentOutput } from "../types/agent";
+import { Document } from "@langchain/core/documents";
 
 class ResearchAgent {
   private vectorStore: VectorStore;
@@ -23,18 +24,36 @@ class ResearchAgent {
     // Crawl and extract strategies
     const strategies = await this.crawlTradingStrategies(input.urls);
     
-    // Convert strategies to proper document format
-    const documents = strategies.map(strategy => ({
-      pageContent: JSON.stringify(strategy),
-      metadata: { source: 'trading-strategy' }
-    }));
+    // Convert strategies to proper document format and chunk into smaller pieces
+    const documents: Document[] = [];
+    for (const strategy of strategies) {
+      const content = JSON.stringify(strategy);
+      // Split content into chunks of roughly 4000 characters (approximately 1000 tokens)
+      const chunks = content.match(/.{1,4000}/g) || [];
+      
+      chunks.forEach((chunk, index) => {
+        documents.push({
+          pageContent: chunk,
+          metadata: { 
+            source: 'trading-strategy',
+            chunk: index,
+            total_chunks: chunks.length
+          }
+        });
+      });
+    }
     
     // Store in vector database for RAG
     if (documents.length > 0) {
-      await this.vectorStore.addDocuments(documents);
+      // Process documents in smaller batches
+      const batchSize = 5;
+      for (let i = 0; i < documents.length; i += batchSize) {
+        const batch = documents.slice(i, i + batchSize);
+        await this.vectorStore.addDocuments(batch);
+      }
     }
 
-    // Analyze with RAG-enhanced LLM
+    // Analyze with RAG-enhanced LLM using smaller context
     const analysis = await this.analyzeWithRAG(input.marketData);
 
     return {
@@ -85,27 +104,18 @@ class ResearchAgent {
   }
 
   private async analyzeWithRAG(marketData: any) {
+    // Limit the number of similar documents retrieved
     const relevantContext = await this.vectorStore.similaritySearch(
       JSON.stringify(marketData),
-      5
+      3  // Reduced from 5 to 3 to limit context size
     );
 
-    const analysis = await this.llm.predict(`
-      Analyze the following market data using the provided trading strategy context:
-      
-      Market Data:
-      ${JSON.stringify(marketData)}
-      
-      Relevant Trading Strategies:
-      ${relevantContext.map(doc => doc.pageContent).join('\n\n')}
-      
-      Provide:
-      1. Most applicable strategy
-      2. Key risk factors
-      3. Recommended entry/exit points
-    `);
+    const prompt = `Analyze the following market data and trading context:
+      Market Data: ${JSON.stringify(marketData)}
+      Trading Context: ${relevantContext.map(doc => doc.pageContent).join('\n')}`;
 
-    return analysis;
+    const response = await this.llm.predict(prompt);
+    return response;
   }
 }
 
