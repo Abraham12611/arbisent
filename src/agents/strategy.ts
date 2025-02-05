@@ -63,15 +63,18 @@ class StrategyAgent {
       Market Sentiment:
       {sentiment}
 
-      Generate a comprehensive trading strategy that includes:
-      1. Strategy name and description
-      2. Specific entry conditions
-      3. Clear exit conditions
-      4. Position sizing recommendations
-      5. Expected return targets
-      6. Recommended timeframe
+      Generate a comprehensive trading strategy following this exact JSON structure:
+      {
+        "name": "Strategy name",
+        "description": "Detailed strategy description",
+        "entryConditions": ["condition1", "condition2"],
+        "exitConditions": ["condition1", "condition2"],
+        "positionSize": "Position sizing recommendation",
+        "expectedReturn": "Expected return target",
+        "timeframe": "Recommended timeframe"
+      }
 
-      Format the response as a structured object.
+      Ensure the response is valid JSON and follows this structure exactly.
     `);
 
     const formattedPrompt = await prompt.format({
@@ -81,7 +84,11 @@ class StrategyAgent {
     });
 
     const response = await this.llm.predict(formattedPrompt);
-    return JSON.parse(response);
+    try {
+      return JSON.parse(response);
+    } catch (error) {
+      throw new Error(`Failed to parse strategy response: ${response}`);
+    }
   }
 
   private async assessRisk(
@@ -100,13 +107,15 @@ class StrategyAgent {
       Sentiment:
       {sentiment}
 
-      Provide a risk assessment that includes:
-      1. Risk level (low/medium/high)
-      2. Confidence score (0-100)
-      3. List of potential risks
-      4. Risk mitigation strategies
+      Provide a risk assessment following this exact JSON structure:
+      {
+        "riskLevel": "high", // must be exactly "low", "medium", or "high"
+        "confidenceScore": 85, // number between 0 and 100
+        "potentialRisks": ["risk1", "risk2"],
+        "mitigationStrategies": ["strategy1", "strategy2"]
+      }
 
-      Format the response as a structured object.
+      Ensure the response is valid JSON and follows this structure exactly.
     `);
 
     const formattedPrompt = await riskPrompt.format({
@@ -116,7 +125,22 @@ class StrategyAgent {
     });
 
     const response = await this.llm.predict(formattedPrompt);
-    return JSON.parse(response);
+    try {
+      const parsed = JSON.parse(response);
+      // Validate risk level
+      if (!['low', 'medium', 'high'].includes(parsed.riskLevel)) {
+        parsed.riskLevel = input.sentiment.overall === 'negative' ? 'high' : 'medium';
+      }
+      // Validate confidence score
+      if (typeof parsed.confidenceScore !== 'number' || 
+          parsed.confidenceScore < 0 || 
+          parsed.confidenceScore > 100) {
+        parsed.confidenceScore = input.sentiment.confidence * 100;
+      }
+      return parsed;
+    } catch (error) {
+      throw new Error(`Failed to parse risk assessment response: ${response}`);
+    }
   }
 }
 
