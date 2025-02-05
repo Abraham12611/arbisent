@@ -23,15 +23,24 @@ interface TradeResult {
   };
 }
 
+interface TokenData {
+  symbol: string;
+  decimals: number;
+}
+
+interface ExtendedSolanaAgentKit extends SolanaAgentKit {
+  getTokenDataByAddress: (address: string) => Promise<TokenData>;
+}
+
 class ExecutionAgent {
-  private solanaKit: SolanaAgentKit;
+  private solanaKit: ExtendedSolanaAgentKit;
   private llm: ChatOpenAI;
 
   constructor(config: {
     solanaKit: SolanaAgentKit;
     llm: ChatOpenAI;
   }) {
-    this.solanaKit = config.solanaKit;
+    this.solanaKit = config.solanaKit as ExtendedSolanaAgentKit;
     this.llm = config.llm;
   }
 
@@ -58,11 +67,11 @@ class ExecutionAgent {
       });
 
       return result;
-    } catch (error) {
+    } catch (error: any) { // Type assertion for error
       console.error('Trade execution failed:', error);
       return {
         status: 'failed',
-        error: error.message,
+        error: error?.message || 'Unknown error',
         metrics: {
           executionTime: 0,
           priceImpact: 0,
@@ -170,8 +179,8 @@ class ExecutionAgent {
           }
         };
       }
-    } catch (error) {
-      throw new Error(`Trade execution failed: ${error.message}`);
+    } catch (error: any) { // Type assertion for error
+      throw new Error(`Trade execution failed: ${error?.message || 'Unknown error'}`);
     }
   }
 
