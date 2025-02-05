@@ -18,11 +18,20 @@ interface WorkflowState {
     research?: any;
     strategy?: any;
     execution?: any;
+    error?: string;
   };
 }
 
+type WorkflowConfig = {
+  channels: {
+    research: string;
+    strategy: string;
+    execution: string;
+  };
+};
+
 class ArbiSentOrchestrator {
-  private graph: StateGraph;
+  private graph: StateGraph<WorkflowState, WorkflowConfig>;
   private researchAgent: ResearchAgent;
   private strategyAgent: StrategyAgent;
   private executionAgent: ExecutionAgent;
@@ -59,8 +68,8 @@ class ArbiSentOrchestrator {
     this.strategyAgent = new StrategyAgent(llm);
     this.executionAgent = new ExecutionAgent({ solanaKit, llm });
 
-    // Initialize StateGraph
-    this.graph = new StateGraph({
+    // Initialize StateGraph with proper typing
+    this.graph = new StateGraph<WorkflowState, WorkflowConfig>({
       channels: {
         research: "research",
         strategy: "strategy",
@@ -166,7 +175,10 @@ class ArbiSentOrchestrator {
       return {
         ...initialState,
         status: "failed",
-        data: { error: error?.message || "Unknown error occurred" }
+        data: { 
+          ...initialState.data,
+          error: error?.message || "Unknown error occurred"
+        }
       };
     }
   }
