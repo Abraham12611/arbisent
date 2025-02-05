@@ -5,31 +5,32 @@ import { PublicKey } from "@solana/web3.js";
 import ExecutionAgent from "../execution";
 
 // Define types for mocked functions
-interface TokenInfo {
+interface TokenData {
   symbol: string;
   decimals: number;
+}
+
+interface MockedSolanaAgentKit extends SolanaAgentKit {
+  getTokenDataByAddress: (address: string) => Promise<TokenData>;
+  trade: (...args: any[]) => Promise<string>;
 }
 
 // Mock SolanaAgentKit with proper types
 jest.mock('solana-agent-kit', () => {
   return {
     SolanaAgentKit: jest.fn().mockImplementation(() => ({
-      getTokenInfo: jest.fn().mockImplementation(async () => ({ 
+      getTokenDataByAddress: jest.fn().mockImplementation(async (): Promise<TokenData> => ({ 
         symbol: 'SOL', 
         decimals: 9 
       })),
       trade: jest.fn().mockReturnValue(Promise.resolve('mock_signature')),
-      getTokenDataByAddress: jest.fn().mockResolvedValue({ 
-        symbol: 'SOL', 
-        decimals: 9 
-      }),
     }))
   };
 });
 
 describe("ExecutionAgent", () => {
   let agent: ExecutionAgent;
-  let mockSolanaKit: jest.Mocked<SolanaAgentKit>;
+  let mockSolanaKit: jest.Mocked<MockedSolanaAgentKit>;
 
   beforeAll(() => {
     const llm = new ChatOpenAI({
@@ -42,7 +43,7 @@ describe("ExecutionAgent", () => {
       process.env.SOLANA_PRIVATE_KEY!,
       process.env.RPC_URL!,
       process.env.OPENAI_API_KEY!
-    ) as jest.Mocked<SolanaAgentKit>;
+    ) as jest.Mocked<MockedSolanaAgentKit>;
 
     agent = new ExecutionAgent({ solanaKit: mockSolanaKit, llm });
   });
@@ -57,7 +58,7 @@ describe("ExecutionAgent", () => {
       },
       parameters: {
         side: 'buy' as const,
-        asset: "So11111111111111111111111111111111111111112", // Wrapped SOL
+        asset: "So11111111111111111111111111111111111111112",
         amount: 1,
         price: 100,
         slippage: 0.5,
