@@ -10,25 +10,20 @@ interface TokenInfo {
   decimals: number;
 }
 
-interface SwapParams {
-  fromMint: PublicKey;
-  toMint: PublicKey;
-  amount: number;
-  slippage: number;
-  priorityFee?: number;
-}
-
 // Mock SolanaAgentKit with proper types
 jest.mock('solana-agent-kit', () => {
   return {
     SolanaAgentKit: jest.fn().mockImplementation(() => ({
-      getTokenInfo: jest.fn().mockResolvedValue<TokenInfo>({ 
+      getTokenInfo: jest.fn().mockImplementation(async () => ({ 
         symbol: 'SOL', 
         decimals: 9 
-      }),
-      swapTokens: jest.fn().mockImplementation(async (params: SwapParams): Promise<string> => {
-        return 'mock_signature';
-      }),
+      })),
+      trade: jest.fn().mockImplementation(async (
+        outputMint: PublicKey,
+        inputAmount: number,
+        inputMint?: PublicKey,
+        slippageBps?: number
+      ) => 'mock_signature'),
     }))
   };
 });
@@ -103,8 +98,8 @@ describe("ExecutionAgent", () => {
 
   test("should handle network errors gracefully", async () => {
     // Mock a network error with proper typing
-    const mockSwapTokens = jest.spyOn(mockSolanaKit, 'swapTokens');
-    mockSwapTokens.mockRejectedValueOnce(new Error('Network error'));
+    const mockTrade = jest.spyOn(mockSolanaKit, 'trade');
+    mockTrade.mockRejectedValueOnce(new Error('Network error'));
 
     const input = {
       strategy: {
