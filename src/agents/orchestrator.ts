@@ -1,4 +1,4 @@
-import { StateGraph, END, type NodeType } from "@langchain/langgraph";
+import { StateGraph, END, type StateDefinition } from "@langchain/langgraph";
 import { ChatOpenAI } from "@langchain/openai";
 import { SolanaAgentKit } from "solana-agent-kit";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
@@ -8,7 +8,7 @@ import ResearchAgent from "./research";
 import StrategyAgent from "./strategy";
 import ExecutionAgent from "./execution";
 
-interface WorkflowState {
+interface WorkflowState extends StateDefinition {
   query: string;
   context: any;
   history: any[];
@@ -20,12 +20,11 @@ interface WorkflowState {
     execution?: any;
     error?: string;
   };
+  [key: string]: any; // Required by StateDefinition
 }
 
-type WorkflowNodes = 'research' | 'strategy' | 'execution';
-
 class ArbiSentOrchestrator {
-  private graph: StateGraph<WorkflowState>;
+  private graph: StateGraph;
   private researchAgent: ResearchAgent;
   private strategyAgent: StrategyAgent;
   private executionAgent: ExecutionAgent;
@@ -62,15 +61,21 @@ class ArbiSentOrchestrator {
     this.strategyAgent = new StrategyAgent(llm);
     this.executionAgent = new ExecutionAgent({ solanaKit, llm });
 
-    // Initialize StateGraph
-    this.graph = new StateGraph<WorkflowState>();
+    // Initialize StateGraph with proper configuration
+    this.graph = new StateGraph({
+      channels: {
+        research: "research",
+        strategy: "strategy",
+        execution: "execution"
+      }
+    });
 
     this.setupWorkflow();
   }
 
   private setupWorkflow() {
     // Add nodes to the graph
-    this.graph.addNode("research" as NodeType, {
+    this.graph.addNode("research", {
       work: async (state: WorkflowState) => {
         state.activeAgent = "research";
         const result = await this.researchAgent.process({
@@ -82,7 +87,7 @@ class ArbiSentOrchestrator {
       }
     });
 
-    this.graph.addNode("strategy" as NodeType, {
+    this.graph.addNode("strategy", {
       work: async (state: WorkflowState) => {
         state.activeAgent = "strategy";
         const result = await this.strategyAgent.process({
@@ -95,7 +100,7 @@ class ArbiSentOrchestrator {
       }
     });
 
-    this.graph.addNode("execution" as NodeType, {
+    this.graph.addNode("execution", {
       work: async (state: WorkflowState) => {
         state.activeAgent = "execution";
         const result = await this.executionAgent.process({
@@ -109,30 +114,30 @@ class ArbiSentOrchestrator {
     });
 
     // Define edges
-    this.graph.addEdge("research" as NodeType, "strategy" as NodeType);
-    this.graph.addEdge("strategy" as NodeType, "execution" as NodeType);
-    this.graph.addEdge("execution" as NodeType, END);
+    this.graph.addEdge("research", "strategy");
+    this.graph.addEdge("strategy", "execution");
+    this.graph.addEdge("execution", END);
 
     // Add conditional edges for error handling
     this.graph.addConditionalEdges(
-      "research" as NodeType,
+      "research",
       (state: WorkflowState) => {
         if (state.data?.research?.error) {
           state.status = 'failed';
           return END;
         }
-        return "strategy" as NodeType;
+        return "strategy";
       }
     );
 
     this.graph.addConditionalEdges(
-      "strategy" as NodeType,
+      "strategy",
       (state: WorkflowState) => {
         if (state.data?.strategy?.error) {
           state.status = 'failed';
           return END;
         }
-        return "execution" as NodeType;
+        return "execution";
       }
     );
   }
