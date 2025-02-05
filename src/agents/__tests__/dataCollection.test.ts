@@ -1,10 +1,36 @@
 import { jest } from '@jest/globals';
-import axios from 'axios';
+import axios, { AxiosResponse, AxiosRequestConfig } from 'axios';
 import DataCollectionAgent from '../dataCollection';
 
 // Mock axios
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
+
+// Define response types
+interface HistoricalDataPoint {
+  timestamp: number;
+  price: number;
+  volume: number;
+  marketCap: number;
+}
+
+interface SentimentDataPoint {
+  timestamp: number;
+  overall: string;
+  confidence: number;
+  sources: {
+    twitter: number;
+    reddit: number;
+    telegram: number;
+  };
+  volume: string;
+}
+
+type ApiResponse<T> = {
+  data: {
+    data: T;
+  };
+};
 
 describe('DataCollectionAgent', () => {
   let agent: DataCollectionAgent;
@@ -21,23 +47,28 @@ describe('DataCollectionAgent', () => {
 
   it('should successfully collect and normalize data', async () => {
     // Mock API responses
-    mockedAxios.get.mockImplementation(async (url: string) => {
+    (mockedAxios.get as jest.Mock).mockImplementation(async (url: string) => {
       if (url.includes('historical-patterns')) {
-        return {
+        const response: ApiResponse<HistoricalDataPoint[]> = {
           data: {
-            data: [
-              {
-                timestamp: 1234567890,
-                price: 100,
-                volume: 1000,
-                marketCap: 1000000
-              }
-            ]
+            data: [{
+              timestamp: 1234567890,
+              price: 100,
+              volume: 1000,
+              marketCap: 1000000
+            }]
           }
+        };
+        return {
+          data: response,
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: { url } as any
         };
       }
       if (url.includes('social-analytics')) {
-        return {
+        const response: ApiResponse<SentimentDataPoint> = {
           data: {
             data: {
               timestamp: 1234567890,
@@ -51,6 +82,13 @@ describe('DataCollectionAgent', () => {
               volume: 'high'
             }
           }
+        };
+        return {
+          data: response,
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: { url } as any
         };
       }
       throw new Error('Unknown endpoint');
