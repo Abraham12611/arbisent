@@ -75,8 +75,8 @@ class ExecutionAgent {
   private async validateTradeParameters(params: TradeParameters): Promise<void> {
     // Validate asset exists
     const assetPubkey = new PublicKey(params.asset);
-    const assetInfo = await this.solanaKit.getTokenInfo(assetPubkey);
-    if (!assetInfo) {
+    const tokenData = await this.solanaKit.getTokenDataByAddress(params.asset);
+    if (!tokenData) {
       throw new Error(`Invalid asset: ${params.asset}`);
     }
 
@@ -135,13 +135,12 @@ class ExecutionAgent {
     // Execute trade using Solana Agent Kit
     try {
       if (side === 'buy') {
-        const signature = await this.solanaKit.swapTokens({
-          fromMint: new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"), // USDC
-          toMint: new PublicKey(asset),
+        const signature = await this.solanaKit.trade(
+          new PublicKey(asset), // outputMint
           amount,
-          slippage: slippage / 100,
-          priorityFee: executionParams.urgency === 'high' ? 100_000 : 10_000
-        });
+          new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"), // inputMint (USDC)
+          slippage * 100 // convert percentage to basis points
+        );
 
         return {
           status: 'success',
@@ -153,8 +152,23 @@ class ExecutionAgent {
           }
         };
       } else {
-        // Similar implementation for sell side
-        // ...
+        // Sell implementation
+        const signature = await this.solanaKit.trade(
+          new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"), // outputMint (USDC)
+          amount,
+          new PublicKey(asset), // inputMint
+          slippage * 100 // convert percentage to basis points
+        );
+
+        return {
+          status: 'success',
+          signature,
+          metrics: {
+            executionTime: 0,
+            priceImpact: await this.calculatePriceImpact(signature),
+            fees: await this.calculateFees(signature)
+          }
+        };
       }
     } catch (error) {
       throw new Error(`Trade execution failed: ${error.message}`);
