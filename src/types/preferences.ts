@@ -2,6 +2,9 @@ export interface WalletAddress {
   address: string;
   label?: string;
   connected_at: string;
+  type: 'phantom' | 'metamask';
+  network: string;
+  isDefault: boolean;
 }
 
 export interface WalletAddresses {

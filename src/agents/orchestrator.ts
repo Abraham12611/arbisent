@@ -16,7 +16,7 @@ interface StateDefinition {
 type WorkflowStateReducer = (state: WorkflowState) => WorkflowState;
 
 export class ArbiSentOrchestrator {
-  private graph: StateGraph;
+  private graph: StateGraph<StateDefinition>;
   private researchAgent: ResearchAgent;
   private strategyAgent: StrategyAgent;
   private executionAgent: ExecutionAgent;
@@ -47,7 +47,7 @@ export class ArbiSentOrchestrator {
     this.executionAgent = new ExecutionAgent({ llm });
 
     // Initialize StateGraph
-    this.graph = new StateGraph({
+    this.graph = new StateGraph<StateDefinition>({
       channels: {
         workflow: (): WorkflowState => ({
           query: "",
