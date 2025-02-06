@@ -29,9 +29,16 @@ interface SentimentData {
 class DataCollectionAgent extends AgentExecutor {
   private config: CookieDataSwarmConfig;
 
-  constructor(config: CookieDataSwarmConfig) {
+  constructor(config?: Partial<CookieDataSwarmConfig>) {
     super();
-    this.config = config;
+    this.config = {
+      apiKey: config?.apiKey || process.env.DATASWARM_API_KEY!,
+      baseUrl: config?.baseUrl || process.env.DATASWARM_API_URL || 'https://api.cookie.fun'
+    };
+    
+    if (!this.config.apiKey) {
+      throw new Error('DataSwarm API key is required');
+    }
   }
 
   async process(input: AgentInput): Promise<AgentOutput> {
