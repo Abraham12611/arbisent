@@ -1,17 +1,23 @@
 export interface WalletAddress {
   address: string;
   label?: string;
-  isVerified: boolean;
+  network: string;
+  type: 'phantom' | 'metamask';
 }
 
-export interface WalletAddresses {
+export type WalletAddresses = {
   [key: string]: WalletAddress;
+};
+
+export interface ProfileFormValues {
+  username: string;
+  avatar_url?: string;
 }
 
-export interface PrivacySettings {
-  share_trading_analytics: boolean;
-  collect_usage_data: boolean;
-  public_profile: boolean;
+export interface EmailPreferences {
+  marketing: boolean;
+  trade_alerts: boolean;
+  security_notifications: boolean;
 }
 
 export interface TradingPreferences {
@@ -26,4 +32,10 @@ export interface TradingPreferences {
     default_timeframe: string;
     layout: string;
   };
+}
+
+export interface PrivacySettings {
+  share_trading_analytics: boolean;
+  collect_usage_data: boolean;
+  public_profile: boolean;
 }

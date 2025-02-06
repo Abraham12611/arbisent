@@ -1,1 +1,4 @@
 project_id = "jpliglvivfjbnemebqca"
+
+[functions.dex-monitor]
+verify_jwt = true
