@@ -19,6 +19,25 @@ export interface WorkflowState {
   };
 }
 
+export interface AgentInput {
+  urls?: string[];
+  marketData?: any;
+  sentiment?: any;
+  parameters?: any;
+}
+
+export interface AgentOutput {
+  status: 'success' | 'failed';
+  error?: string;
+  strategies?: any[];
+  analysis?: string;
+  metrics?: {
+    executionTime: number;
+    priceImpact: number;
+    fees: number;
+  };
+}
+
 export interface AgentConfig {
   llm: any;
   vectorStore?: any;
@@ -67,4 +86,8 @@ export interface ExecutionResult {
     priceImpact: number;
     fees: number;
   };
+}
+
+export interface ExecutionConfig {
+  llm: any;
 }
