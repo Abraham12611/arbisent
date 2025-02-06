@@ -1,23 +1,12 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Send, TrendingUp, Wallet, AlertTriangle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
-}
+import { TradeOrderForm } from "./TradeOrderForm";
+import { ChatHistory } from "./ChatHistory";
+import { TradingContextCards } from "./TradingContextCards";
+import { MessageInput } from "./MessageInput";
 
 interface TradeExecutionModalProps {
   chatId?: string;
@@ -26,7 +15,7 @@ interface TradeExecutionModalProps {
 export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
   const [prompt, setPrompt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const [chatHistory, setChatHistory] = useState<any[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | undefined>(chatId);
   const [tradingPair, setTradingPair] = useState<string>("SOL/USDC");
   const [tradeType, setTradeType] = useState<string>("market");
@@ -75,12 +64,11 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
     return true;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     if (!validateTradePrompt()) return;
 
     const formattedPrompt = formatTradePrompt();
-    const userMessage: ChatMessage = { role: 'user', content: formattedPrompt };
+    const userMessage = { role: 'user' as const, content: formattedPrompt };
     
     try {
       setIsLoading(true);
@@ -132,7 +120,7 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
 
       if (error) throw error;
       
-      const aiMessage: ChatMessage = { role: 'assistant', content: data.answer };
+      const aiMessage = { role: 'assistant' as const, content: data.answer };
       await supabase
         .from('chat_messages')
         .insert([{
@@ -168,113 +156,43 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
         </p>
       </div>
 
-      {chatHistory.length > 0 && (
-        <div className="mb-4 space-y-4 max-h-[400px] overflow-y-auto">
-          {chatHistory.map((message, index) => (
-            <Card key={index} className={`bg-[#151822]/${message.role === 'user' ? '80' : '50'} border-gray-800`}>
-              <CardContent className="p-4">
-                <div className="flex items-start gap-2">
-                  <span className="font-semibold text-sm text-gray-400">
-                    {message.role === 'user' ? 'You:' : 'AI:'}
-                  </span>
-                  <div className="text-gray-200 whitespace-pre-wrap">{message.content}</div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      <ChatHistory messages={chatHistory} />
 
       <Card className="bg-[#151822]/80 border-gray-800">
         <CardContent className="p-4">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="flex gap-4 mb-4">
-              <Select value={tradingPair} onValueChange={setTradingPair}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Select pair" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="SOL/USDC">SOL/USDC</SelectItem>
-                  <SelectItem value="ETH/USDC">ETH/USDC</SelectItem>
-                  <SelectItem value="BTC/USDC">BTC/USDC</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="flex gap-4 mb-4">
+            <Select value={tradingPair} onValueChange={setTradingPair}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select pair" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="SOL/USDC">SOL/USDC</SelectItem>
+                <SelectItem value="ETH/USDC">ETH/USDC</SelectItem>
+                <SelectItem value="BTC/USDC">BTC/USDC</SelectItem>
+              </SelectContent>
+            </Select>
 
-              <Select value={tradeType} onValueChange={setTradeType}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Trade type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="market">Market</SelectItem>
-                  <SelectItem value="limit">Limit</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={tradeType} onValueChange={setTradeType}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Trade type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="market">Market</SelectItem>
+                <SelectItem value="limit">Limit</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-            <div className="relative">
-              <Textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Describe your trade strategy..."
-                className="min-h-[100px] bg-transparent border-0 focus-visible:ring-0 focus-visible:outline-none text-base resize-none"
-              />
-              <div className="absolute bottom-2 right-2 flex items-center gap-2">
-                <Button 
-                  type="button"
-                  variant="ghost" 
-                  size="sm"
-                  className="text-gray-400 hover:text-white hover:bg-transparent"
-                  disabled={isLoading}
-                >
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Analysis
-                </Button>
-                <Button 
-                  type="submit"
-                  size="sm"
-                  className="bg-yellow-500 hover:bg-yellow-600 text-black"
-                  disabled={isLoading}
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  Submit
-                </Button>
-              </div>
-            </div>
-          </form>
+          <MessageInput
+            value={prompt}
+            onChange={setPrompt}
+            onSubmit={handleSubmit}
+            isLoading={isLoading}
+          />
         </CardContent>
       </Card>
 
-      {chatHistory.length === 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-          <Card className="bg-[#151822]/50 border-gray-800 hover:border-gray-700 transition-colors cursor-pointer">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="h-5 w-5 text-yellow-500" />
-                <h3 className="text-sm font-medium text-gray-400">Market Analysis</h3>
-              </div>
-              <p className="text-sm text-gray-500">Analyze current market conditions and trends</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-[#151822]/50 border-gray-800 hover:border-gray-700 transition-colors cursor-pointer">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Wallet className="h-5 w-5 text-yellow-500" />
-                <h3 className="text-sm font-medium text-gray-400">Portfolio</h3>
-              </div>
-              <p className="text-sm text-gray-500">View and manage your active positions</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-[#151822]/50 border-gray-800 hover:border-gray-700 transition-colors cursor-pointer">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                <h3 className="text-sm font-medium text-gray-400">Risk Analysis</h3>
-              </div>
-              <p className="text-sm text-gray-500">Evaluate potential risks and rewards</p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {chatHistory.length === 0 && <TradingContextCards />}
     </div>
   );
 };
