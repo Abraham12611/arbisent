@@ -10,7 +10,7 @@ import ExecutionAgent from "./execution";
 import { WorkflowState } from "../types/agent";
 
 export class ArbiSentOrchestrator {
-  private graph: StateGraph;
+  private graph: StateGraph<WorkflowState>;
   private researchAgent: ResearchAgent;
   private strategyAgent: StrategyAgent;
   private executionAgent: ExecutionAgent;
@@ -41,9 +41,9 @@ export class ArbiSentOrchestrator {
     this.executionAgent = new ExecutionAgent({ llm });
 
     // Initialize StateGraph
-    this.graph = new StateGraph({
+    this.graph = new StateGraph<WorkflowState>({
       channels: {
-        root: async () => ({
+        state: async () => ({
           query: "",
           context: {},
           history: [],
