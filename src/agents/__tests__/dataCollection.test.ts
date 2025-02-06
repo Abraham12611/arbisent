@@ -47,7 +47,7 @@ describe('DataCollectionAgent', () => {
 
   it('should successfully collect and normalize data', async () => {
     // Mock API responses
-    (mockedAxios.get as jest.Mock).mockImplementation(async (url: string) => {
+    (mockedAxios.get as jest.Mock<Promise<AxiosResponse>, [string, (AxiosRequestConfig | undefined)?]>).mockImplementation(async (url: string) => {
       if (url.includes('historical-patterns')) {
         const response: ApiResponse<HistoricalDataPoint[]> = {
           data: {
