@@ -2,7 +2,12 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import type { WalletAddresses, WalletAddress, JsonWalletAddresses } from "@/types/preferences";
+import type { 
+  WalletAddresses, 
+  WalletAddress, 
+  JsonWalletAddresses,
+  JsonWalletAddress 
+} from "@/types/preferences";
 
 interface WalletConnectorProps {
   onClose?: () => void;
@@ -28,10 +33,10 @@ export function WalletConnector({ onClose }: WalletConnectorProps) {
         .eq('id', (await supabase.auth.getUser()).data.user?.id)
         .single();
 
-      const walletAddresses = ((profile?.wallet_addresses || {}) as JsonWalletAddresses) as WalletAddresses;
+      const walletAddresses = profile?.wallet_addresses as JsonWalletAddresses || {};
       const isFirstWallet = Object.keys(walletAddresses).length === 0;
       
-      const updatedWalletAddresses: WalletAddresses = {
+      const updatedWalletAddresses: JsonWalletAddresses = {
         ...walletAddresses,
         phantom: {
           address: walletAddress,
@@ -42,7 +47,7 @@ export function WalletConnector({ onClose }: WalletConnectorProps) {
       };
 
       const { error } = await supabase.from('profiles').update({
-        wallet_addresses: updatedWalletAddresses as JsonWalletAddresses
+        wallet_addresses: updatedWalletAddresses
       }).eq('id', (await supabase.auth.getUser()).data.user?.id);
 
       if (error) throw error;
@@ -76,10 +81,10 @@ export function WalletConnector({ onClose }: WalletConnectorProps) {
         .eq('id', (await supabase.auth.getUser()).data.user?.id)
         .single();
 
-      const walletAddresses = ((profile?.wallet_addresses || {}) as JsonWalletAddresses) as WalletAddresses;
+      const walletAddresses = profile?.wallet_addresses as JsonWalletAddresses || {};
       const isFirstWallet = Object.keys(walletAddresses).length === 0;
 
-      const updatedWalletAddresses: WalletAddresses = {
+      const updatedWalletAddresses: JsonWalletAddresses = {
         ...walletAddresses,
         metamask: {
           address: walletAddress,
@@ -90,7 +95,7 @@ export function WalletConnector({ onClose }: WalletConnectorProps) {
       };
 
       const { error } = await supabase.from('profiles').update({
-        wallet_addresses: updatedWalletAddresses as JsonWalletAddresses
+        wallet_addresses: updatedWalletAddresses
       }).eq('id', (await supabase.auth.getUser()).data.user?.id);
 
       if (error) throw error;
