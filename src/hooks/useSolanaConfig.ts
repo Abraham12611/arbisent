@@ -1,50 +1,42 @@
 import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
-import { solanaConfig } from '@/utils/solanaConfig';
+import { Connection, Keypair } from '@solana/web3.js';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export const useSolanaConfig = () => {
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [connection, setConnection] = useState<Connection | null>(null);
+  const [wallet, setWallet] = useState<Keypair | null>(null);
 
   useEffect(() => {
-    const initializeSolana = async () => {
+    const initializeSolanaConfig = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          setIsLoading(false);
-          return;
-        }
-
         const { data: profile } = await supabase
           .from('profiles')
           .select('wallet_addresses')
-          .eq('id', user.id)
           .single();
 
-        if (!profile?.wallet_addresses?.privateKey) {
-          console.log('No wallet configuration found');
-          setIsLoading(false);
-          return;
+        if (profile?.wallet_addresses) {
+          const walletData = profile.wallet_addresses as Record<string, { address: string; privateKey?: string }>;
+          const phantomWallet = walletData.phantom;
+
+          if (phantomWallet?.privateKey) {
+            const secretKey = Uint8Array.from(JSON.parse(phantomWallet.privateKey));
+            const keypair = Keypair.fromSecretKey(secretKey);
+            setWallet(keypair);
+          }
         }
 
-        await solanaConfig.initialize(
-          process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com',
-          profile.wallet_addresses.privateKey
-        );
-
-        setIsInitialized(true);
-        console.log('Solana configuration initialized');
-      } catch (error) {
-        console.error('Error initializing Solana:', error);
+        const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com';
+        const conn = new Connection(rpcUrl);
+        setConnection(conn);
+      } catch (error: any) {
+        console.error('Error initializing Solana config:', error);
         toast.error('Failed to initialize Solana configuration');
-      } finally {
-        setIsLoading(false);
       }
     };
 
-    initializeSolana();
+    initializeSolanaConfig();
   }, []);
 
-  return { isInitialized, isLoading };
+  return { connection, wallet };
 };

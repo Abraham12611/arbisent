@@ -35,7 +35,7 @@ class ArbiSentOrchestrator {
   constructor() {
     // Initialize LLM
     const llm = new ChatOpenAI({
-      modelName: "gpt-4",
+      modelName: "gpt-4o-mini",
       temperature: 0.7,
       openAIApiKey: process.env.OPENAI_API_KEY,
     });
@@ -65,7 +65,18 @@ class ArbiSentOrchestrator {
     this.executionAgent = new ExecutionAgent({ solanaKit, llm });
 
     // Initialize StateGraph
-    this.graph = new StateGraph<WorkflowState, WorkflowNode>({});
+    this.graph = new StateGraph<WorkflowState, WorkflowNode>({
+      channels: {
+        __start__: async () => ({
+          query: "",
+          context: {},
+          history: [],
+          activeAgent: "__start__",
+          status: "running",
+          data: {}
+        })
+      }
+    });
 
     this.setupWorkflow();
   }

@@ -22,13 +22,12 @@ class ResearchAgent {
 
   async process(input: AgentInput): Promise<AgentOutput> {
     // Crawl and extract strategies
-    const strategies = await this.crawlTradingStrategies(input.urls);
+    const strategies = await this.crawlTradingStrategies(input.urls || []);
     
     // Convert strategies to proper document format and chunk into smaller pieces
     const documents: Document[] = [];
     for (const strategy of strategies) {
       const content = JSON.stringify(strategy);
-      // Split content into chunks of roughly 4000 characters (approximately 1000 tokens)
       const chunks = content.match(/.{1,4000}/g) || [];
       
       chunks.forEach((chunk, index) => {
@@ -43,9 +42,7 @@ class ResearchAgent {
       });
     }
     
-    // Store in vector database for RAG
     if (documents.length > 0) {
-      // Process documents in smaller batches
       const batchSize = 5;
       for (let i = 0; i < documents.length; i += batchSize) {
         const batch = documents.slice(i, i + batchSize);
@@ -53,10 +50,10 @@ class ResearchAgent {
       }
     }
 
-    // Analyze with RAG-enhanced LLM using smaller context
-    const analysis = await this.analyzeWithRAG(input.marketData);
+    const analysis = await this.analyzeWithRAG(input.marketData || {});
 
     return {
+      status: 'success',
       strategies,
       analysis
     };
@@ -118,5 +115,3 @@ class ResearchAgent {
     return response;
   }
 }
-
-export default ResearchAgent; 
