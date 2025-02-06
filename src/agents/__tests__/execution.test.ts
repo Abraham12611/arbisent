@@ -26,7 +26,14 @@ describe('ExecutionAgent', () => {
 
     const result = await agent.process({
       strategy: mockStrategy,
-      parameters: { slippage: 0.01 }
+      parameters: {
+        side: 'buy',
+        asset: 'So11111111111111111111111111111111111111112',
+        amount: 1,
+        price: 100,
+        slippage: 0.01,
+        dex: 'Orca'
+      }
     });
 
     expect(result).toBeDefined();

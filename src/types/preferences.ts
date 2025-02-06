@@ -41,3 +41,12 @@ export interface PrivacySettings {
   collect_usage_data: boolean;
   public_profile: boolean;
 }
+
+// Add Json type for Supabase compatibility
+export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
+
+// Convert interfaces to Json-compatible types
+export type JsonWalletAddresses = { [key: string]: Json };
+export type JsonEmailPreferences = { [key: string]: Json };
+export type JsonTradingPreferences = { [key: string]: Json };
+export type JsonPrivacySettings = { [key: string]: Json };

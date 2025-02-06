@@ -47,7 +47,7 @@ export class ArbiSentOrchestrator {
     // Initialize StateGraph
     this.graph = new StateGraph<StateDefinition>({
       channels: {
-        workflow: async () => ({
+        workflow: () => ({
           query: "",
           context: {},
           history: [],
