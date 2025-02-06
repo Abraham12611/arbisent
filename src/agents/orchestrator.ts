@@ -10,7 +10,7 @@ import ExecutionAgent from "./execution";
 import { WorkflowState } from "../types/agent";
 
 export class ArbiSentOrchestrator {
-  private graph: StateGraph<WorkflowState>;
+  private graph: StateGraph;
   private researchAgent: ResearchAgent;
   private strategyAgent: StrategyAgent;
   private executionAgent: ExecutionAgent;
@@ -40,10 +40,10 @@ export class ArbiSentOrchestrator {
     this.strategyAgent = new StrategyAgent(llm);
     this.executionAgent = new ExecutionAgent({ llm });
 
-    // Initialize StateGraph
-    this.graph = new StateGraph<WorkflowState>({
+    // Initialize StateGraph with explicit type
+    this.graph = new StateGraph({
       channels: {
-        state: async () => ({
+        workflow: async () => ({
           query: "",
           context: {},
           history: [],
@@ -58,42 +58,48 @@ export class ArbiSentOrchestrator {
   }
 
   private setupWorkflow() {
-    // Add nodes to the graph
-    this.graph.addNode("research", async (state: WorkflowState) => {
-      state.activeAgent = "research";
-      const result = await this.researchAgent.process({
-        urls: state.context.urls,
-        marketData: state.context.marketData
-      });
-      return {
-        ...state,
-        data: { ...state.data, research: result }
-      };
+    // Add nodes to the graph with proper typing
+    this.graph.addNode("research", {
+      value: async (state: WorkflowState) => {
+        state.activeAgent = "research";
+        const result = await this.researchAgent.process({
+          urls: state.context.urls,
+          marketData: state.context.marketData
+        });
+        return {
+          ...state,
+          data: { ...state.data, research: result }
+        };
+      }
     });
 
-    this.graph.addNode("strategy", async (state: WorkflowState) => {
-      state.activeAgent = "strategy";
-      const result = await this.strategyAgent.process({
-        marketData: state.context.marketData,
-        research: state.data?.research?.strategies || [],
-        sentiment: state.context.sentiment
-      });
-      state.data = { ...state.data, strategy: result };
-      return state;
+    this.graph.addNode("strategy", {
+      value: async (state: WorkflowState) => {
+        state.activeAgent = "strategy";
+        const result = await this.strategyAgent.process({
+          marketData: state.context.marketData,
+          research: state.data?.research?.strategies || [],
+          sentiment: state.context.sentiment
+        });
+        state.data = { ...state.data, strategy: result };
+        return state;
+      }
     });
 
-    this.graph.addNode("execution", async (state: WorkflowState) => {
-      state.activeAgent = "execution";
-      const result = await this.executionAgent.process({
-        strategy: state.data?.strategy?.strategy,
-        parameters: state.context.parameters
-      });
-      state.data = { ...state.data, execution: result };
-      state.status = result.status === 'success' ? 'completed' : 'failed';
-      return state;
+    this.graph.addNode("execution", {
+      value: async (state: WorkflowState) => {
+        state.activeAgent = "execution";
+        const result = await this.executionAgent.process({
+          strategy: state.data?.strategy?.strategy,
+          parameters: state.context.parameters
+        });
+        state.data = { ...state.data, execution: result };
+        state.status = result.status === 'success' ? 'completed' : 'failed';
+        return state;
+      }
     });
 
-    // Define edges
+    // Define edges with proper typing
     this.graph.setEntryPoint("research");
     this.graph.addEdge("research", "strategy");
     this.graph.addEdge("strategy", "execution");
@@ -143,10 +149,9 @@ export class ArbiSentOrchestrator {
       // Run the workflow
       const app = this.graph.compile();
       const result = await app.invoke({
-        state: initialState,
-        config: {}
+        workflow: initialState
       });
-      return result.state as WorkflowState;
+      return result.workflow as WorkflowState;
     } catch (error: any) {
       console.error("Workflow execution failed:", error);
       return {
