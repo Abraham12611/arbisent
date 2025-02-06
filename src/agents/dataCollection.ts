@@ -1,4 +1,4 @@
-import { BaseAgent } from "@langchain/core";
+import { AgentExecutor } from "langchain/agents";
 import axios from "axios";
 import { AgentInput, AgentOutput } from "../types/agent";
 
@@ -26,7 +26,7 @@ interface SentimentData {
   volume: 'high' | 'medium' | 'low';
 }
 
-class DataCollectionAgent extends BaseAgent {
+class DataCollectionAgent extends AgentExecutor {
   private config: CookieDataSwarmConfig;
 
   constructor(config: CookieDataSwarmConfig) {
@@ -67,18 +67,41 @@ class DataCollectionAgent extends BaseAgent {
         {
           headers: {
             'Authorization': `Bearer ${this.config.apiKey}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-API-Version': '2024-02',  // As per Cookie DataSwarm docs
+            'Accept': 'application/json'
           },
           params: {
             asset,
             interval: '1h',
-            limit: 168 // Last 7 days hourly data
+            limit: 168, // Last 7 days hourly data
+            include_metrics: true,
+            format: 'json'
           }
         }
       );
 
-      return response.data.data;
+      // Validate response structure
+      if (!response.data?.data) {
+        throw new Error('Invalid response structure from DataSwarm API');
+      }
+
+      // Transform data to match our interface
+      return response.data.data.map((item: any) => ({
+        timestamp: new Date(item.timestamp).getTime(),
+        price: parseFloat(item.price),
+        volume: parseFloat(item.volume),
+        marketCap: parseFloat(item.market_cap || '0'),
+        volatility: parseFloat(item.volatility || '0'),
+        trend: item.trend || 'neutral'
+      }));
     } catch (error: any) {
+      if (error.response?.status === 401) {
+        throw new Error('Invalid DataSwarm API key');
+      }
+      if (error.response?.status === 429) {
+        throw new Error('DataSwarm API rate limit exceeded');
+      }
       throw new Error(`Historical patterns fetch failed: ${error?.message}`);
     }
   }
@@ -90,17 +113,48 @@ class DataCollectionAgent extends BaseAgent {
         {
           headers: {
             'Authorization': `Bearer ${this.config.apiKey}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-API-Version': '2024-02',
+            'Accept': 'application/json'
           },
           params: {
             asset,
-            timeframe: '24h'
+            timeframe: '24h',
+            include_sources: true,
+            sentiment_analysis: true
           }
         }
       );
 
-      return response.data.data;
+      // Validate response
+      if (!response.data?.data) {
+        throw new Error('Invalid response structure from DataSwarm API');
+      }
+
+      const data = response.data.data;
+      return {
+        timestamp: new Date(data.timestamp).getTime(),
+        overall: data.sentiment.overall,
+        confidence: parseFloat(data.sentiment.confidence),
+        sources: {
+          twitter: parseInt(data.sources.twitter.count),
+          reddit: parseInt(data.sources.reddit.count),
+          telegram: parseInt(data.sources.telegram.count)
+        },
+        volume: data.volume_classification,
+        additionalMetrics: {
+          sentiment_momentum: data.sentiment_momentum,
+          social_dominance: data.social_dominance,
+          engagement_rate: data.engagement_rate
+        }
+      };
     } catch (error: any) {
+      if (error.response?.status === 401) {
+        throw new Error('Invalid DataSwarm API key');
+      }
+      if (error.response?.status === 429) {
+        throw new Error('DataSwarm API rate limit exceeded');
+      }
       throw new Error(`Social analytics fetch failed: ${error?.message}`);
     }
   }

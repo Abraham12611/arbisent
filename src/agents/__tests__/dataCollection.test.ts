@@ -47,48 +47,46 @@ describe('DataCollectionAgent', () => {
 
   it('should successfully collect and normalize data', async () => {
     // Mock API responses
-    (mockedAxios.get as jest.Mock<Promise<AxiosResponse>, [string, (AxiosRequestConfig | undefined)?]>).mockImplementation(async (url: string) => {
+    (mockedAxios.get as jest.Mock).mockImplementation(async (url: string) => {
       if (url.includes('historical-patterns')) {
-        const response: ApiResponse<HistoricalDataPoint[]> = {
+        return {
           data: {
             data: [{
-              timestamp: 1234567890,
-              price: 100,
-              volume: 1000,
-              marketCap: 1000000
-            }]
-          }
-        };
-        return {
-          data: response,
-          status: 200,
-          statusText: 'OK',
-          headers: {},
-          config: { url } as any
-        };
-      }
-      if (url.includes('social-analytics')) {
-        const response: ApiResponse<SentimentDataPoint> = {
-          data: {
-            data: {
-              timestamp: 1234567890,
-              overall: 'positive',
-              confidence: 0.8,
-              sources: {
-                twitter: 500,
-                reddit: 300,
-                telegram: 200
-              },
-              volume: 'high'
+              timestamp: '2024-02-01T00:00:00Z',
+              price: '100.50',
+              volume: '1000000',
+              market_cap: '10000000000',
+              volatility: '0.15',
+              trend: 'bullish'
+            }],
+            meta: {
+              asset: 'BTC',
+              interval: '1h',
+              count: 1
             }
           }
         };
+      }
+      if (url.includes('social-analytics')) {
         return {
-          data: response,
-          status: 200,
-          statusText: 'OK',
-          headers: {},
-          config: { url } as any
+          data: {
+            data: {
+              timestamp: '2024-02-01T00:00:00Z',
+              sentiment: {
+                overall: 'positive',
+                confidence: '0.85'
+              },
+              sources: {
+                twitter: { count: '500', sentiment: 'positive' },
+                reddit: { count: '300', sentiment: 'neutral' },
+                telegram: { count: '200', sentiment: 'positive' }
+              },
+              volume_classification: 'high',
+              sentiment_momentum: '0.2',
+              social_dominance: '0.15',
+              engagement_rate: '0.08'
+            }
+          }
         };
       }
       throw new Error('Unknown endpoint');
