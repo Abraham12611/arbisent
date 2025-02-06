@@ -1,7 +1,8 @@
-import { SolanaAgentKit } from "solana-agent-kit";
 import { PublicKey } from "@solana/web3.js";
 import { ChatOpenAI } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
+import { solanaConfig } from "@/utils/solanaConfig";
+import { toast } from "sonner";
 
 interface TradeParameters {
   side: 'buy' | 'sell';
@@ -28,20 +29,14 @@ interface TokenData {
   decimals: number;
 }
 
-interface ExtendedSolanaAgentKit extends SolanaAgentKit {
-  getTokenDataByAddress: (address: string) => Promise<TokenData>;
-}
-
 class ExecutionAgent {
-  private solanaKit: ExtendedSolanaAgentKit;
   private llm: ChatOpenAI;
 
   constructor(config: {
-    solanaKit: SolanaAgentKit;
     llm: ChatOpenAI;
   }) {
-    this.solanaKit = config.solanaKit as ExtendedSolanaAgentKit;
     this.llm = config.llm;
+    console.log('Initializing ExecutionAgent with Solana configuration');
   }
 
   async process(input: {
@@ -49,6 +44,8 @@ class ExecutionAgent {
     parameters: TradeParameters;
   }): Promise<TradeResult> {
     try {
+      console.log('Processing trade execution:', input);
+      
       // Validate trade parameters
       await this.validateTradeParameters(input.parameters);
 
@@ -67,8 +64,9 @@ class ExecutionAgent {
       });
 
       return result;
-    } catch (error: any) { // Type assertion for error
+    } catch (error: any) {
       console.error('Trade execution failed:', error);
+      toast.error(`Trade execution failed: ${error.message}`);
       return {
         status: 'failed',
         error: error?.message || 'Unknown error',
@@ -82,21 +80,32 @@ class ExecutionAgent {
   }
 
   private async validateTradeParameters(params: TradeParameters): Promise<void> {
-    // Validate asset exists
-    const assetPubkey = new PublicKey(params.asset);
-    const tokenData = await this.solanaKit.getTokenDataByAddress(params.asset);
-    if (!tokenData) {
-      throw new Error(`Invalid asset: ${params.asset}`);
-    }
+    console.log('Validating trade parameters:', params);
+    
+    try {
+      // Validate asset exists
+      const assetPubkey = new PublicKey(params.asset);
+      const connection = solanaConfig.getConnection();
+      const accountInfo = await connection.getAccountInfo(assetPubkey);
+      
+      if (!accountInfo) {
+        throw new Error(`Invalid asset: ${params.asset}`);
+      }
 
-    // Validate price and amount
-    if (params.price <= 0 || params.amount <= 0) {
-      throw new Error('Invalid price or amount');
-    }
+      // Validate price and amount
+      if (params.price <= 0 || params.amount <= 0) {
+        throw new Error('Invalid price or amount');
+      }
 
-    // Validate slippage
-    if (params.slippage < 0 || params.slippage > 100) {
-      throw new Error('Invalid slippage percentage');
+      // Validate slippage
+      if (params.slippage < 0 || params.slippage > 100) {
+        throw new Error('Invalid slippage percentage');
+      }
+
+      console.log('Trade parameters validated successfully');
+    } catch (error: any) {
+      console.error('Parameter validation failed:', error);
+      throw new Error(`Parameter validation failed: ${error.message}`);
     }
   }
 
@@ -104,71 +113,79 @@ class ExecutionAgent {
     strategy: any,
     params: TradeParameters
   ): Promise<TradeResult> {
+    console.log('Executing strategy:', { strategy, params });
+    
     const { side, asset, amount, price, slippage, dex } = params;
 
-    // Convert strategy to executable parameters using LLM
-    const executionPrompt = PromptTemplate.fromTemplate(`
-      Convert this trading strategy into specific execution parameters:
-      Strategy: {strategy}
-      Side: {side}
-      Asset: {asset}
-      Amount: {amount}
-      Target Price: {price}
-      Maximum Slippage: {slippage}%
-      DEX: {dex}
-
-      Provide execution parameters in this format:
-      {format_instructions}
-    `);
-
-    const formatInstructions = `{
-      "orderType": "limit" | "market",
-      "urgency": "low" | "medium" | "high",
-      "splitOrders": boolean,
-      "maxPriceImpact": number
-    }`;
-
-    const formattedPrompt = await executionPrompt.format({
-      strategy: JSON.stringify(strategy),
-      side,
-      asset,
-      amount,
-      price,
-      slippage,
-      dex,
-      format_instructions: formatInstructions
-    });
-
-    const executionParams = JSON.parse(await this.llm.predict(formattedPrompt));
-
-    // Execute trade using Solana Agent Kit
     try {
+      // Get Solana configuration
+      const agentKit = solanaConfig.getAgentKit();
+
+      // Convert strategy to executable parameters using LLM
+      const executionPrompt = PromptTemplate.fromTemplate(`
+        Convert this trading strategy into specific execution parameters:
+        Strategy: {strategy}
+        Side: {side}
+        Asset: {asset}
+        Amount: {amount}
+        Target Price: {price}
+        Maximum Slippage: {slippage}%
+        DEX: {dex}
+
+        Provide execution parameters in this format:
+        {format_instructions}
+      `);
+
+      const formatInstructions = `{
+        "orderType": "limit" | "market",
+        "urgency": "low" | "medium" | "high",
+        "splitOrders": boolean,
+        "maxPriceImpact": number
+      }`;
+
+      const formattedPrompt = await executionPrompt.format({
+        strategy: JSON.stringify(strategy),
+        side,
+        asset,
+        amount,
+        price,
+        slippage,
+        dex,
+        format_instructions: formatInstructions
+      });
+
+      const executionParams = JSON.parse(await this.llm.predict(formattedPrompt));
+      console.log('Generated execution parameters:', executionParams);
+
+      // Execute trade using Solana Agent Kit
       if (side === 'buy') {
-        const signature = await this.solanaKit.trade(
+        const signature = await agentKit.trade(
           new PublicKey(asset), // outputMint
           amount,
           new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"), // inputMint (USDC)
           slippage * 100 // convert percentage to basis points
         );
 
+        console.log('Buy trade executed successfully:', signature);
         return {
           status: 'success',
           signature,
           metrics: {
-            executionTime: 0, // Will be set by process method
+            executionTime: 0,
             priceImpact: await this.calculatePriceImpact(signature),
             fees: await this.calculateFees(signature)
           }
         };
       } else {
         // Sell implementation
-        const signature = await this.solanaKit.trade(
+        const signature = await agentKit.trade(
           new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"), // outputMint (USDC)
           amount,
           new PublicKey(asset), // inputMint
           slippage * 100 // convert percentage to basis points
         );
 
+        console.log('Sell trade executed successfully:', signature);
         return {
           status: 'success',
           signature,
@@ -179,8 +196,9 @@ class ExecutionAgent {
           }
         };
       }
-    } catch (error: any) { // Type assertion for error
-      throw new Error(`Trade execution failed: ${error?.message || 'Unknown error'}`);
+    } catch (error: any) {
+      console.error('Strategy execution failed:', error);
+      throw new Error(`Strategy execution failed: ${error.message}`);
     }
   }
 
@@ -195,13 +213,10 @@ class ExecutionAgent {
   }
 
   private async logTradeOutcome(result: TradeResult): Promise<void> {
+    console.log('Logging trade outcome:', result);
     // Implement trade logging
-    console.log('Trade executed:', {
-      status: result.status,
-      signature: result.signature,
-      metrics: result.metrics
-    });
+    // This could be expanded to store in Supabase or emit events
   }
 }
 
-export default ExecutionAgent; 
+export default ExecutionAgent;
