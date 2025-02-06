@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import type { WalletAddresses } from "@/types/preferences";
+import type { WalletAddresses, WalletAddress } from "@/types/preferences";
 
 interface WalletConnectorProps {
   onClose?: () => void;
@@ -28,13 +28,15 @@ export function WalletConnector({ onClose }: WalletConnectorProps) {
         .eq('id', (await supabase.auth.getUser()).data.user?.id)
         .single();
 
-      const walletAddresses = (profile?.wallet_addresses || {}) as WalletAddresses;
-      const isFirstWallet = !walletAddresses || Object.keys(walletAddresses).length === 0;
+      const walletAddresses = (profile?.wallet_addresses as WalletAddresses) || {};
+      const isFirstWallet = Object.keys(walletAddresses).length === 0;
       
       const updatedWalletAddresses: WalletAddresses = {
         ...walletAddresses,
         phantom: {
           address: walletAddress,
+          type: 'phantom',
+          network: 'solana',
           isDefault: isFirstWallet
         }
       };
@@ -74,13 +76,15 @@ export function WalletConnector({ onClose }: WalletConnectorProps) {
         .eq('id', (await supabase.auth.getUser()).data.user?.id)
         .single();
 
-      const walletAddresses = (profile?.wallet_addresses || {}) as WalletAddresses;
-      const isFirstWallet = !walletAddresses || Object.keys(walletAddresses).length === 0;
+      const walletAddresses = (profile?.wallet_addresses as WalletAddresses) || {};
+      const isFirstWallet = Object.keys(walletAddresses).length === 0;
 
       const updatedWalletAddresses: WalletAddresses = {
         ...walletAddresses,
         metamask: {
           address: walletAddress,
+          type: 'metamask',
+          network: 'ethereum',
           isDefault: isFirstWallet
         }
       };

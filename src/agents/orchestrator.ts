@@ -1,4 +1,4 @@
-import { StateGraph, END, type StateDefinition } from "@langchain/langgraph";
+import { StateGraph, END } from "@langchain/langgraph";
 import { ChatOpenAI } from "@langchain/openai";
 import { SolanaAgentKit } from "solana-agent-kit";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
@@ -9,8 +9,12 @@ import StrategyAgent from "./strategy";
 import ExecutionAgent from "./execution";
 import { WorkflowState } from "../types/agent";
 
+interface StateDefinition {
+  workflow: WorkflowState;
+}
+
 export class ArbiSentOrchestrator {
-  private graph: StateGraph;
+  private graph: StateGraph<StateDefinition>;
   private researchAgent: ResearchAgent;
   private strategyAgent: StrategyAgent;
   private executionAgent: ExecutionAgent;
@@ -40,8 +44,8 @@ export class ArbiSentOrchestrator {
     this.strategyAgent = new StrategyAgent(llm);
     this.executionAgent = new ExecutionAgent({ llm });
 
-    // Initialize StateGraph with explicit type
-    this.graph = new StateGraph({
+    // Initialize StateGraph
+    this.graph = new StateGraph<StateDefinition>({
       channels: {
         workflow: async () => ({
           query: "",
@@ -50,7 +54,7 @@ export class ArbiSentOrchestrator {
           activeAgent: "__start__",
           status: "running",
           data: {}
-        })
+        } as WorkflowState)
       }
     });
 

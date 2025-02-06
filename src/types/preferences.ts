@@ -1,8 +1,9 @@
 export interface WalletAddress {
   address: string;
   label?: string;
-  network: string;
+  network?: string;
   type: 'phantom' | 'metamask';
+  isDefault?: boolean;
 }
 
 export type WalletAddresses = {
@@ -12,6 +13,7 @@ export type WalletAddresses = {
 export interface ProfileFormValues {
   username: string;
   avatar_url?: string;
+  email_preferences?: EmailPreferences;
 }
 
 export interface EmailPreferences {

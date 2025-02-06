@@ -26,7 +26,7 @@ describe('ExecutionAgent', () => {
 
     const result = await agent.process({
       strategy: mockStrategy,
-      parameters: { maxSlippage: 0.01 }
+      parameters: { slippage: 0.01 }
     });
 
     expect(result).toBeDefined();
