@@ -1,14 +1,13 @@
 import { describe, expect, test, beforeAll, jest } from '@jest/globals';
 import { ChatOpenAI } from "@langchain/openai";
-import { PublicKey } from "@solana/web3.js";
 import ExecutionAgent from "../execution";
-import { TradeParameters, TradeResult, TokenData } from "../execution/types";
+import { TradeParameters } from "../execution/types";
 
 // Mock Solana configuration
 jest.mock('@/utils/solanaConfig', () => ({
   solanaConfig: {
     getConnection: jest.fn().mockReturnValue({
-      getAccountInfo: jest.fn().mockResolvedValue({ data: new Uint8Array() })
+      getAccountInfo: jest.fn().mockResolvedValue(null)
     }),
     getAgentKit: jest.fn().mockReturnValue({
       trade: jest.fn().mockResolvedValue('mock_signature')
