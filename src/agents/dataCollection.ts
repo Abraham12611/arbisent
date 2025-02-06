@@ -75,7 +75,7 @@ class DataCollectionAgent extends AgentExecutor {
           headers: {
             'Authorization': `Bearer ${this.config.apiKey}`,
             'Content-Type': 'application/json',
-            'X-API-Version': '2024-02',  // As per Cookie DataSwarm docs
+            'X-API-Version': '2024-02',
             'Accept': 'application/json'
           },
           params: {
