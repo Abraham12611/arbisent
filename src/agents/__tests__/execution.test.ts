@@ -1,36 +1,23 @@
 import { describe, expect, test, beforeAll, jest } from '@jest/globals';
 import { ChatOpenAI } from "@langchain/openai";
-import { SolanaAgentKit } from "solana-agent-kit";
 import { PublicKey } from "@solana/web3.js";
 import ExecutionAgent from "../execution";
+import { TradeParameters, TradeResult, TokenData } from "../execution/types";
 
-// Define types for mocked functions
-interface TokenData {
-  symbol: string;
-  decimals: number;
-}
-
-interface MockedSolanaAgentKit extends SolanaAgentKit {
-  getTokenDataByAddress: (address: string) => Promise<TokenData>;
-  trade: (...args: any[]) => Promise<string>;
-}
-
-// Mock SolanaAgentKit with proper types
-jest.mock('solana-agent-kit', () => {
-  return {
-    SolanaAgentKit: jest.fn().mockImplementation(() => ({
-      getTokenDataByAddress: jest.fn().mockImplementation(async (): Promise<TokenData> => ({ 
-        symbol: 'SOL', 
-        decimals: 9 
-      })),
-      trade: jest.fn().mockReturnValue(Promise.resolve('mock_signature')),
-    }))
-  };
-});
+// Mock Solana configuration
+jest.mock('@/utils/solanaConfig', () => ({
+  solanaConfig: {
+    getConnection: jest.fn().mockReturnValue({
+      getAccountInfo: jest.fn().mockResolvedValue({ data: new Uint8Array() })
+    }),
+    getAgentKit: jest.fn().mockReturnValue({
+      trade: jest.fn().mockResolvedValue('mock_signature')
+    })
+  }
+}));
 
 describe("ExecutionAgent", () => {
   let agent: ExecutionAgent;
-  let mockSolanaKit: jest.Mocked<MockedSolanaAgentKit>;
 
   beforeAll(() => {
     const llm = new ChatOpenAI({
@@ -39,13 +26,7 @@ describe("ExecutionAgent", () => {
       openAIApiKey: process.env.OPENAI_API_KEY,
     });
 
-    mockSolanaKit = new SolanaAgentKit(
-      process.env.SOLANA_PRIVATE_KEY!,
-      process.env.RPC_URL!,
-      process.env.OPENAI_API_KEY!
-    ) as jest.Mocked<MockedSolanaAgentKit>;
-
-    agent = new ExecutionAgent({ solanaKit: mockSolanaKit, llm });
+    agent = new ExecutionAgent({ llm });
   });
 
   test("should validate and execute trade parameters", async () => {
@@ -97,9 +78,11 @@ describe("ExecutionAgent", () => {
   }, 30000);
 
   test("should handle network errors gracefully", async () => {
-    // Mock a network error with proper typing
-    const mockTrade = mockSolanaKit.trade as jest.MockedFunction<typeof mockSolanaKit.trade>;
-    mockTrade.mockRejectedValueOnce(new Error('Network error'));
+    jest.spyOn(console, 'error').mockImplementation(() => {}); // Suppress error logs
+    
+    // Mock a network error
+    const mockError = new Error('Network error');
+    jest.spyOn(agent['executor'], 'executeStrategy').mockRejectedValueOnce(mockError);
 
     const input = {
       strategy: {
@@ -119,4 +102,4 @@ describe("ExecutionAgent", () => {
     expect(result.status).toBe('failed');
     expect(result.error).toContain('Network error');
   }, 30000);
-}); 
+});
