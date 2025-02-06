@@ -1,11 +1,10 @@
-import dotenv from "dotenv";
 import { ChatOpenAI } from "@langchain/openai";
 import { VectorStore } from "@langchain/core/vectorstores";
 import axios from "axios";
 import { AgentInput, AgentOutput } from "../types/agent";
 import { Document } from "@langchain/core/documents";
 
-class ResearchAgent {
+export class ResearchAgent {
   private vectorStore: VectorStore;
   private firecrawlApiKey: string;
   private llm: ChatOpenAI;

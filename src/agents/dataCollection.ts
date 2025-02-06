@@ -1,5 +1,3 @@
-import { SentimentData } from '../types/agent';
-
 export class DataCollectionAgent {
   private apiKey: string;
 
@@ -17,7 +15,7 @@ export class DataCollectionAgent {
     };
   }
 
-  async fetchSentimentData(asset: string): Promise<SentimentData> {
+  async fetchSentimentData(asset: string) {
     // Implementation for sentiment data fetching
     return {
       overall: 'neutral',

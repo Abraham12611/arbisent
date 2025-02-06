@@ -7,27 +7,10 @@ import { OpenAIEmbeddings } from "@langchain/openai";
 import ResearchAgent from "./research";
 import StrategyAgent from "./strategy";
 import ExecutionAgent from "./execution";
+import { WorkflowState } from "../types/agent";
 
-// Define the allowed node names in the graph
-type WorkflowNode = "__start__" | "__end__" | "research" | "strategy" | "execution";
-
-interface WorkflowState extends StateDefinition {
-  query: string;
-  context: any;
-  history: any[];
-  activeAgent: string;
-  status: 'running' | 'completed' | 'failed';
-  data?: {
-    research?: any;
-    strategy?: any;
-    execution?: any;
-    error?: string;
-  };
-  [key: string]: any; // Required by StateDefinition
-}
-
-class ArbiSentOrchestrator {
-  private graph: StateGraph<WorkflowState, WorkflowNode>;
+export class ArbiSentOrchestrator {
+  private graph: StateGraph<WorkflowState, "__start__" | "__end__" | "research" | "strategy" | "execution">;
   private researchAgent: ResearchAgent;
   private strategyAgent: StrategyAgent;
   private executionAgent: ExecutionAgent;
@@ -39,13 +22,6 @@ class ArbiSentOrchestrator {
       temperature: 0.7,
       openAIApiKey: process.env.OPENAI_API_KEY,
     });
-
-    // Initialize Solana Kit
-    const solanaKit = new SolanaAgentKit(
-      process.env.SOLANA_PRIVATE_KEY!,
-      process.env.RPC_URL!,
-      process.env.OPENAI_API_KEY!
-    );
 
     // Initialize Vector Store
     const vectorStore = new MemoryVectorStore(
@@ -62,10 +38,10 @@ class ArbiSentOrchestrator {
     });
 
     this.strategyAgent = new StrategyAgent(llm);
-    this.executionAgent = new ExecutionAgent({ solanaKit, llm });
+    this.executionAgent = new ExecutionAgent({ llm });
 
     // Initialize StateGraph
-    this.graph = new StateGraph<WorkflowState, WorkflowNode>({
+    this.graph = new StateGraph<WorkflowState, "__start__" | "__end__" | "research" | "strategy" | "execution">({
       channels: {
         __start__: async () => ({
           query: "",
