@@ -7,16 +7,10 @@ import { OpenAIEmbeddings } from "@langchain/openai";
 import { ResearchAgent } from "./research";
 import StrategyAgent from "./strategy";
 import ExecutionAgent from "./execution";
-import { WorkflowState } from "../types/agent";
-
-interface StateDefinition {
-  workflow: WorkflowState;
-}
-
-type WorkflowStateReducer = (state: WorkflowState) => WorkflowState;
+import { WorkflowState, StateDefinition } from "../types/agent";
 
 export class ArbiSentOrchestrator {
-  private graph: StateGraph<StateDefinition>;
+  private graph: StateGraph;
   private researchAgent: ResearchAgent;
   private strategyAgent: StrategyAgent;
   private executionAgent: ExecutionAgent;
@@ -47,9 +41,9 @@ export class ArbiSentOrchestrator {
     this.executionAgent = new ExecutionAgent({ llm });
 
     // Initialize StateGraph
-    this.graph = new StateGraph<StateDefinition>({
+    this.graph = new StateGraph({
       channels: {
-        workflow: (): WorkflowState => ({
+        workflow: async (): Promise<WorkflowState> => ({
           query: "",
           context: {},
           history: [],

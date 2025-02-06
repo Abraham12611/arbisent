@@ -11,11 +11,6 @@ export interface WalletAddress {
   isDefault: boolean;
 }
 
-export interface WalletAddresses {
-  phantom?: WalletAddress;
-  metamask?: WalletAddress;
-}
-
 export interface JsonWalletAddress extends Json {
   address: string;
   label?: string;
@@ -25,7 +20,7 @@ export interface JsonWalletAddress extends Json {
   isDefault: boolean;
 }
 
-export interface JsonWalletAddresses extends Json {
+export interface WalletAddresses {
   phantom?: JsonWalletAddress;
   metamask?: JsonWalletAddress;
 }
@@ -54,4 +49,13 @@ export interface PrivacySettings extends Json {
   share_trading_analytics: boolean;
   collect_usage_data: boolean;
   public_profile: boolean;
+}
+
+export interface ProfileFormValues {
+  username?: string;
+  avatar_url?: string;
+  email_preferences?: EmailPreferences;
+  trading_preferences?: TradingPreferences;
+  privacy_settings?: PrivacySettings;
+  wallet_addresses?: WalletAddresses;
 }

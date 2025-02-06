@@ -14,6 +14,20 @@ export interface SentimentData {
   timestamp: number;
 }
 
+export interface AgentInput {
+  urls?: string[];
+  marketData?: MarketData;
+  sentiment?: SentimentData;
+  parameters?: any;
+}
+
+export interface AgentOutput {
+  status: 'success' | 'failed';
+  strategies?: any[];
+  analysis?: string;
+  error?: string;
+}
+
 export interface WorkflowState {
   query: string;
   context: {
