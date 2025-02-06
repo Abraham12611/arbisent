@@ -4,7 +4,7 @@ import { SolanaAgentKit } from "solana-agent-kit";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import { OpenAIEmbeddings } from "@langchain/openai";
 
-import ResearchAgent from "./research";
+import { ResearchAgent } from "./research";
 import StrategyAgent from "./strategy";
 import ExecutionAgent from "./execution";
 import { WorkflowState } from "../types/agent";
