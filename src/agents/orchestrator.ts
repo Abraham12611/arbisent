@@ -10,7 +10,7 @@ import ExecutionAgent from "./execution";
 import { WorkflowState } from "../types/agent";
 
 export class ArbiSentOrchestrator {
-  private graph: StateGraph<WorkflowState, "__start__" | "__end__" | "research" | "strategy" | "execution">;
+  private graph: StateGraph;
   private researchAgent: ResearchAgent;
   private strategyAgent: StrategyAgent;
   private executionAgent: ExecutionAgent;
@@ -41,9 +41,9 @@ export class ArbiSentOrchestrator {
     this.executionAgent = new ExecutionAgent({ llm });
 
     // Initialize StateGraph
-    this.graph = new StateGraph<WorkflowState, "__start__" | "__end__" | "research" | "strategy" | "execution">({
+    this.graph = new StateGraph({
       channels: {
-        __start__: async () => ({
+        root: async () => ({
           query: "",
           context: {},
           history: [],
@@ -59,58 +59,47 @@ export class ArbiSentOrchestrator {
 
   private setupWorkflow() {
     // Add nodes to the graph
-    this.graph.addNode("research", {
-      work: async (state: WorkflowState) => {
-        state.activeAgent = "research";
-        const result = await this.researchAgent.process({
-          urls: state.context.urls,
-          marketData: state.context.marketData
-        });
-        return {
-          ...state,
-          data: { ...state.data, research: result }
-        };
-      }
+    this.graph.addNode("research", async (state: WorkflowState) => {
+      state.activeAgent = "research";
+      const result = await this.researchAgent.process({
+        urls: state.context.urls,
+        marketData: state.context.marketData
+      });
+      return {
+        ...state,
+        data: { ...state.data, research: result }
+      };
     });
 
-    this.graph.addNode("strategy", {
-      work: async (state: WorkflowState) => {
-        state.activeAgent = "strategy";
-        const result = await this.strategyAgent.process({
-          marketData: state.context.marketData,
-          research: state.data?.research?.strategies || [],
-          sentiment: state.context.sentiment
-        });
-        state.data = { ...state.data, strategy: result };
-        return state;
-      }
+    this.graph.addNode("strategy", async (state: WorkflowState) => {
+      state.activeAgent = "strategy";
+      const result = await this.strategyAgent.process({
+        marketData: state.context.marketData,
+        research: state.data?.research?.strategies || [],
+        sentiment: state.context.sentiment
+      });
+      state.data = { ...state.data, strategy: result };
+      return state;
     });
 
-    this.graph.addNode("execution", {
-      work: async (state: WorkflowState) => {
-        state.activeAgent = "execution";
-        const result = await this.executionAgent.process({
-          strategy: state.data?.strategy?.strategy,
-          parameters: state.context.parameters
-        });
-        state.data = { ...state.data, execution: result };
-        state.status = result.status === 'success' ? 'completed' : 'failed';
-        return state;
-      }
+    this.graph.addNode("execution", async (state: WorkflowState) => {
+      state.activeAgent = "execution";
+      const result = await this.executionAgent.process({
+        strategy: state.data?.strategy?.strategy,
+        parameters: state.context.parameters
+      });
+      state.data = { ...state.data, execution: result };
+      state.status = result.status === 'success' ? 'completed' : 'failed';
+      return state;
     });
 
-    // Define edges starting from __start__
-    this.graph.addEdge("__start__", "research");
+    // Define edges
+    this.graph.setEntryPoint("research");
     this.graph.addEdge("research", "strategy");
     this.graph.addEdge("strategy", "execution");
     this.graph.addEdge("execution", END);
 
     // Add conditional edges for error handling
-    this.graph.addConditionalEdges(
-      "__start__",
-      (state: WorkflowState) => "research"
-    );
-
     this.graph.addConditionalEdges(
       "research",
       (state: WorkflowState) => {
