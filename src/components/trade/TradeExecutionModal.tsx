@@ -7,6 +7,9 @@ import { TradeOrderForm } from "./TradeOrderForm";
 import { ChatHistory } from "./ChatHistory";
 import { TradingContextCards } from "./TradingContextCards";
 import { MessageInput } from "./MessageInput";
+import { useTradeNLU } from "@/hooks/useTradeNLU";
+import { Badge } from "@/components/ui/badge";
+import { ParsedTradeMessage } from "@/lib/nlu/types";
 
 interface TradeExecutionModalProps {
   chatId?: string;
@@ -19,6 +22,7 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
   const [currentChatId, setCurrentChatId] = useState<string | undefined>(chatId);
   const [tradingPair, setTradingPair] = useState<string>("SOL/USDC");
   const [tradeType, setTradeType] = useState<string>("market");
+  const { processMessage, isProcessing, lastParsedMessage } = useTradeNLU();
 
   useEffect(() => {
     if (chatId) {
@@ -48,31 +52,20 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
     }
   };
 
-  const formatTradePrompt = () => {
-    return `${tradeType.toUpperCase()} trade for ${tradingPair}: ${prompt}`;
-  };
-
-  const validateTradePrompt = () => {
+  const handleSubmit = async () => {
     if (!prompt.trim()) {
       toast.error("Please enter a trade description");
-      return false;
+      return;
     }
-    if (!tradingPair) {
-      toast.error("Please select a trading pair");
-      return false;
-    }
-    return true;
-  };
 
-  const handleSubmit = async () => {
-    if (!validateTradePrompt()) return;
-
-    const formattedPrompt = formatTradePrompt();
-    const userMessage = { role: 'user' as const, content: formattedPrompt };
-    
     try {
       setIsLoading(true);
-      console.log("Submitting trade prompt:", formattedPrompt);
+      
+      // Process message through NLU
+      const parsedMessage = await processMessage(prompt);
+      if (!parsedMessage) return;
+
+      console.log("Parsed trade message:", parsedMessage);
       
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
@@ -94,23 +87,26 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
         setCurrentChatId(chat.id);
       }
 
+      // Store the original message
       const { error: messageError } = await supabase
         .from('chat_messages')
         .insert([{
           chat_id: currentChatId,
           role: 'user',
-          content: formattedPrompt
+          content: prompt
         }]);
 
       if (messageError) throw messageError;
 
-      const updatedHistory = [...chatHistory, userMessage];
+      const updatedHistory = [...chatHistory, { role: 'user' as const, content: prompt }];
       setChatHistory(updatedHistory);
       
+      // Get AI response based on parsed intent
       const { data, error } = await supabase.functions.invoke('chat', {
         body: { 
-          prompt: formattedPrompt,
+          prompt,
           chatHistory: updatedHistory.slice(-10),
+          parsedIntent: parsedMessage,
           tradeContext: {
             pair: tradingPair,
             type: tradeType
@@ -158,6 +154,29 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
 
       <ChatHistory messages={chatHistory} />
 
+      {lastParsedMessage && (
+        <Card className="mb-4 bg-yellow-500/10 border-yellow-500/50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Badge variant="outline" className="text-yellow-500 border-yellow-500">
+                {lastParsedMessage.intent}
+              </Badge>
+              <span className="text-sm text-gray-400">
+                Confidence: {(lastParsedMessage.confidence * 100).toFixed(1)}%
+              </span>
+            </div>
+            <div className="text-sm text-gray-300">
+              {Object.entries(lastParsedMessage.parameters).map(([key, value]) => (
+                <div key={key} className="flex items-center gap-2">
+                  <span className="font-medium">{key}:</span>
+                  <span>{value}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="bg-[#151822]/80 border-gray-800">
         <CardContent className="p-4">
           <div className="flex gap-4 mb-4">
@@ -187,7 +206,7 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
             value={prompt}
             onChange={setPrompt}
             onSubmit={handleSubmit}
-            isLoading={isLoading}
+            isLoading={isLoading || isProcessing}
           />
         </CardContent>
       </Card>
