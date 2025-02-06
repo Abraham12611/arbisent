@@ -1,14 +1,13 @@
 export interface WalletAddress {
   address: string;
   label?: string;
-  network?: string;
-  type: 'phantom' | 'metamask';
-  isDefault?: boolean;
+  connected_at: string;
 }
 
-export type WalletAddresses = {
-  [key: string]: WalletAddress;
-};
+export interface WalletAddresses {
+  phantom?: WalletAddress;
+  metamask?: WalletAddress;
+}
 
 export interface EmailPreferences {
   marketing: boolean;
@@ -45,28 +44,22 @@ export interface ProfileFormValues {
   wallet_addresses?: WalletAddresses;
 }
 
-// Add Json type for Supabase compatibility
-export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
+// Json types for Supabase compatibility
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
-// Convert interfaces to Json-compatible types with index signatures
-export interface JsonWalletAddress {
-  [key: string]: Json;
-  address: string;
-  type: string;
-  network?: string;
-  label?: string;
-  isDefault?: boolean;
+export interface JsonWalletAddress extends WalletAddress {
+  [key: string]: Json | undefined;
 }
 
 export interface JsonWalletAddresses {
-  [key: string]: JsonWalletAddress;
+  [key: string]: JsonWalletAddress | undefined;
 }
 
 export interface JsonEmailPreferences extends EmailPreferences {
-  [key: string]: Json;
+  [key: string]: Json | undefined;
 }
 
-export interface JsonTradingPreferences extends TradingPreferences {
+export interface JsonTradingPreferences extends Omit<TradingPreferences, 'risk_management' | 'interface_preferences'> {
   [key: string]: Json | {
     default_stop_loss_percentage: number;
     default_take_profit_percentage: number;
@@ -75,9 +68,19 @@ export interface JsonTradingPreferences extends TradingPreferences {
     chart_type: string;
     default_timeframe: string;
     layout: string;
+  } | undefined;
+  risk_management: {
+    default_stop_loss_percentage: number;
+    default_take_profit_percentage: number;
+    max_position_size_usd: number;
+  };
+  interface_preferences: {
+    chart_type: string;
+    default_timeframe: string;
+    layout: string;
   };
 }
 
 export interface JsonPrivacySettings extends PrivacySettings {
-  [key: string]: Json;
+  [key: string]: Json | undefined;
 }

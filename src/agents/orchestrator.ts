@@ -13,8 +13,10 @@ interface StateDefinition {
   workflow: WorkflowState;
 }
 
+type WorkflowStateReducer = (state: WorkflowState) => WorkflowState;
+
 export class ArbiSentOrchestrator {
-  private graph: StateGraph<StateDefinition>;
+  private graph: StateGraph;
   private researchAgent: ResearchAgent;
   private strategyAgent: StrategyAgent;
   private executionAgent: ExecutionAgent;
@@ -45,16 +47,16 @@ export class ArbiSentOrchestrator {
     this.executionAgent = new ExecutionAgent({ llm });
 
     // Initialize StateGraph
-    this.graph = new StateGraph<StateDefinition>({
+    this.graph = new StateGraph({
       channels: {
-        workflow: () => ({
+        workflow: (): WorkflowState => ({
           query: "",
           context: {},
           history: [],
           activeAgent: "__start__",
           status: "running",
           data: {}
-        } as WorkflowState)
+        })
       }
     });
 
@@ -64,7 +66,7 @@ export class ArbiSentOrchestrator {
   private setupWorkflow() {
     // Add nodes to the graph with proper typing
     this.graph.addNode("research", {
-      value: async (state: WorkflowState) => {
+      value: async (state: WorkflowState): Promise<WorkflowState> => {
         state.activeAgent = "research";
         const result = await this.researchAgent.process({
           urls: state.context.urls,
@@ -78,7 +80,7 @@ export class ArbiSentOrchestrator {
     });
 
     this.graph.addNode("strategy", {
-      value: async (state: WorkflowState) => {
+      value: async (state: WorkflowState): Promise<WorkflowState> => {
         state.activeAgent = "strategy";
         const result = await this.strategyAgent.process({
           marketData: state.context.marketData,
@@ -91,7 +93,7 @@ export class ArbiSentOrchestrator {
     });
 
     this.graph.addNode("execution", {
-      value: async (state: WorkflowState) => {
+      value: async (state: WorkflowState): Promise<WorkflowState> => {
         state.activeAgent = "execution";
         const result = await this.executionAgent.process({
           strategy: state.data?.strategy?.strategy,
@@ -103,7 +105,7 @@ export class ArbiSentOrchestrator {
       }
     });
 
-    // Define edges with proper typing
+    // Define edges
     this.graph.setEntryPoint("research");
     this.graph.addEdge("research", "strategy");
     this.graph.addEdge("strategy", "execution");
