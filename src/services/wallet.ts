@@ -1,19 +1,8 @@
+
 import { PublicKey } from "@solana/web3.js";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-export interface WalletAddress {
-  address: string;
-  isDefault: boolean;
-  chain: 'solana' | 'ethereum';
-  balance?: string;
-  lastUsed?: Date;
-}
-
-export interface WalletAddresses {
-  phantom?: WalletAddress;
-  metamask?: WalletAddress;
-}
+import { WalletAddresses, WalletAddress } from "@/types/preferences";
 
 export class WalletService {
   static async validateWallet(address: string, chain: 'solana' | 'ethereum'): Promise<boolean> {
@@ -63,7 +52,7 @@ export class WalletService {
       const { error } = await supabase
         .from('profiles')
         .update({ 
-          wallet_addresses: addresses,
+          wallet_addresses: this.convertToJson(addresses),
           updated_at: new Date().toISOString()
         })
         .eq('id', userId);
@@ -75,4 +64,16 @@ export class WalletService {
       return { success: false, error: error.message };
     }
   }
-} 
+
+  private static convertToJson(addresses: WalletAddresses): Record<string, any> {
+    return Object.entries(addresses).reduce((acc, [key, wallet]) => {
+      if (wallet) {
+        acc[key] = {
+          ...wallet,
+          lastUsed: wallet.lastUsed?.toISOString(),
+        };
+      }
+      return acc;
+    }, {} as Record<string, any>);
+  }
+}

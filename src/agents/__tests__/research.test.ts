@@ -1,3 +1,4 @@
+
 import { describe, expect, test } from '@jest/globals';
 import { ResearchAgent } from '../research';
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
@@ -30,7 +31,12 @@ describe('ResearchAgent', () => {
   test('process returns research results', async () => {
     const result = await agent.process({
       urls: ['https://example.com'],
-      marketData: { price: 100, volume: 1000 }
+      marketData: { 
+        asset: 'BTC/USD',
+        price: 100, 
+        volume: 1000,
+        timestamp: Date.now()
+      }
     });
 
     expect(result).toHaveProperty('strategies');

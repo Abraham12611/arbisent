@@ -1,3 +1,4 @@
+
 import { config } from 'dotenv';
 import { ChatOpenAI } from "@langchain/openai";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
@@ -31,6 +32,7 @@ async function main() {
       'https://example.com/market-analysis'
     ],
     marketData: {
+      asset: 'BTC/USD',
       price: 100,
       volume: 1000000,
       timestamp: Date.now()

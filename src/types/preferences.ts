@@ -1,20 +1,27 @@
+
 import { Json } from "@/integrations/supabase/types";
 
 export interface WalletAddress {
   address: string;
   label?: string;
   isDefault: boolean;
+  chain: 'solana' | 'ethereum';
+  lastUsed?: Date;
+  balance?: string;
 }
 
-export interface JsonWalletAddress extends Json {
+export interface JsonWalletAddress {
   address: string;
   label?: string;
   isDefault: boolean;
+  chain: 'solana' | 'ethereum';
+  lastUsed?: string;
+  balance?: string;
 }
 
 export interface WalletAddresses {
-  phantom?: JsonWalletAddress;
-  metamask?: JsonWalletAddress;
+  phantom?: WalletAddress;
+  metamask?: WalletAddress;
 }
 
 export interface EmailPreferences {
@@ -24,7 +31,6 @@ export interface EmailPreferences {
 }
 
 export interface TradingPreferences {
-  [key: string]: string | number | boolean | Json | Json[];
   default_pairs: string[];
   risk_management: {
     default_stop_loss_percentage: number;
