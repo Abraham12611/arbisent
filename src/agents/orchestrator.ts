@@ -1,5 +1,5 @@
 
-import { StateGraph } from "@langchain/langgraph";
+import { StateGraph, BaseMessage } from "@langchain/langgraph";
 import { ChatOpenAI } from "@langchain/openai";
 import { SolanaAgentKit } from "solana-agent-kit";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
@@ -10,16 +10,17 @@ import StrategyAgent from "./strategy";
 import ExecutionAgent from "./execution";
 import { WorkflowState } from "../types/agent";
 
-const END = "__end__";
+const END_STATE = "__end__";
+const START_STATE = "__start__";
 
-type Node = "__start__" | "research" | "strategy" | "execution" | typeof END;
+type Node = typeof START_STATE | "research" | "strategy" | "execution" | typeof END_STATE;
 
 interface StateGraphConfig {
-  initialState: WorkflowState;
+  state: WorkflowState;
 }
 
 export class ArbiSentOrchestrator {
-  private graph: StateGraph<StateGraphConfig>;
+  private graph: StateGraph;
   private researchAgent: ResearchAgent;
   private strategyAgent: StrategyAgent;
   private executionAgent: ExecutionAgent;
@@ -50,15 +51,17 @@ export class ArbiSentOrchestrator {
     this.executionAgent = new ExecutionAgent({ llm });
 
     // Initialize StateGraph
-    this.graph = StateGraph.fromConfig<StateGraphConfig, Node>({
-      channels: {},
-    });
+    this.graph = new StateGraph();
 
     this.setupWorkflow();
   }
 
   private setupWorkflow() {
     // Add nodes to the graph
+    this.graph.addNode(START_STATE, {
+      value: async (state: WorkflowState) => state
+    });
+
     this.graph.addNode("research", {
       value: async (state: WorkflowState): Promise<WorkflowState> => {
         state.activeAgent = "research";
@@ -99,33 +102,36 @@ export class ArbiSentOrchestrator {
       }
     });
 
+    this.graph.addNode(END_STATE, {
+      value: async (state: WorkflowState) => state
+    });
+
     // Define edges
-    this.graph.setEntryPoint("__start__");
-    this.graph.addEdge("__start__" as Node, "research" as Node);
-    this.graph.addEdge("research" as Node, "strategy" as Node);
-    this.graph.addEdge("strategy" as Node, "execution" as Node);
-    this.graph.addEdge("execution" as Node, END);
+    this.graph.addEdge(START_STATE, "research");
+    this.graph.addEdge("research", "strategy");
+    this.graph.addEdge("strategy", "execution");
+    this.graph.addEdge("execution", END_STATE);
 
     // Add conditional edges for error handling
     this.graph.addConditionalEdges(
-      "research" as Node,
+      "research",
       (state: WorkflowState) => {
         if (state.data?.research?.error) {
           state.status = 'failed';
-          return END;
+          return END_STATE;
         }
-        return "strategy" as Node;
+        return "strategy";
       }
     );
 
     this.graph.addConditionalEdges(
-      "strategy" as Node,
+      "strategy",
       (state: WorkflowState) => {
         if (state.data?.strategy?.error) {
           state.status = 'failed';
-          return END;
+          return END_STATE;
         }
-        return "execution" as Node;
+        return "execution";
       }
     );
   }
@@ -140,7 +146,7 @@ export class ArbiSentOrchestrator {
       query: "arbitrage_execution",
       context: input,
       history: [],
-      activeAgent: "__start__",
+      activeAgent: START_STATE,
       status: "running",
       data: {}
     };
