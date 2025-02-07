@@ -3,3 +3,9 @@ project_id = "jpliglvivfjbnemebqca"
 
 [functions.parse-trade-intent]
 verify_jwt = false
+
+[functions.chat]
+verify_jwt = false
+
+[functions.dex-monitor] 
+verify_jwt = false

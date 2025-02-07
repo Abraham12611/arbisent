@@ -29,7 +29,7 @@ serve(async (req) => {
     console.log('With context:', context)
 
     const llm = new ChatOpenAI({
-      modelName: 'gpt-3.5-turbo', // Using a more stable model name
+      modelName: 'gpt-3.5-turbo',
       temperature: 0.3,
       openAIApiKey,
     })
@@ -47,7 +47,6 @@ serve(async (req) => {
 
     console.log('LLM response:', response)
 
-    // Parse the response text into structured data
     let parsedData
     try {
       // First try to find JSON in the response if it's wrapped in text
@@ -56,7 +55,6 @@ serve(async (req) => {
       parsedData = JSON.parse(jsonStr)
     } catch (e) {
       console.error('Failed to parse LLM response as JSON:', e)
-      // Provide a default structured response if parsing fails
       parsedData = {
         intent: 'ANALYZE',
         parameters: {
@@ -71,7 +69,12 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify(parsedData),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json'
+        }
+      }
     )
   } catch (error) {
     console.error('Error in parse-trade-intent function:', error)
@@ -86,7 +89,10 @@ serve(async (req) => {
       }),
       { 
         status: 200, // Return 200 even on error to handle it gracefully on client
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        }
       }
     )
   }
