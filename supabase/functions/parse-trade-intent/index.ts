@@ -29,30 +29,37 @@ serve(async (req) => {
     Respond with a JSON object containing intent, parameters, and confidence score.
     Previous context: ${JSON.stringify(context)}`
 
+    console.log('Processing message:', message)
+    console.log('With context:', context)
+
     const response = await llm.call([
       { role: 'system', content: systemPrompt },
       { role: 'user', content: message }
     ])
 
-    // Parse the natural language into structured data
-    const parsed = {
-      intent: 'SCHEDULE_TRADE',
-      parameters: {
-        asset: 'USDC',
-        amount: 0,  // User needs to specify
-        frequency: 'daily',
-        timeframe: {
-          type: 'recurring',
-          interval: 'daily',
-          startTime: new Date().toISOString()
+    console.log('LLM response:', response)
+
+    // Parse the response text into structured data
+    let parsedData
+    try {
+      parsedData = JSON.parse(response.content)
+    } catch (e) {
+      console.error('Failed to parse LLM response as JSON:', e)
+      // Provide a default structured response if parsing fails
+      parsedData = {
+        intent: 'ANALYZE',
+        parameters: {
+          asset: message.includes('SOL') ? 'SOL' : 'USDC',
+          strategy: 'basic_analysis'
         },
-        strategy: 'automated_swap'
-      },
-      confidence: 0.95
+        confidence: 0.6
+      }
     }
 
+    console.log('Parsed response:', parsedData)
+
     return new Response(
-      JSON.stringify(parsed),
+      JSON.stringify(parsedData),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
