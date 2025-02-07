@@ -19,7 +19,7 @@ export interface JsonWalletAddress extends Record<string, Json> {
   balance?: string;
 }
 
-export interface JsonWalletAddresses extends Record<string, Json> {
+export interface JsonWalletAddresses {
   phantom?: JsonWalletAddress;
   metamask?: JsonWalletAddress;
 }
@@ -29,7 +29,7 @@ export interface WalletAddresses {
   metamask?: WalletAddress;
 }
 
-export interface EmailPreferences extends Record<string, Json> {
+export interface EmailPreferences {
   marketing: boolean;
   trade_alerts: boolean;
   security_notifications: boolean;
@@ -41,7 +41,7 @@ export interface JsonEmailPreferences extends Record<string, Json> {
   security_notifications: boolean;
 }
 
-export interface TradingPreferences extends Record<string, Json> {
+export interface TradingPreferences {
   default_pairs: string[];
   risk_management: {
     default_stop_loss_percentage: number;
@@ -55,7 +55,7 @@ export interface TradingPreferences extends Record<string, Json> {
   };
 }
 
-export interface JsonTradingPreferences extends Record<string, Json> {
+export interface JsonTradingPreferences {
   default_pairs: string[];
   risk_management: {
     default_stop_loss_percentage: number;
@@ -69,7 +69,7 @@ export interface JsonTradingPreferences extends Record<string, Json> {
   };
 }
 
-export interface PrivacySettings extends Record<string, Json> {
+export interface PrivacySettings {
   share_trading_analytics: boolean;
   collect_usage_data: boolean;
   public_profile: boolean;

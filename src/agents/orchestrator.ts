@@ -1,5 +1,5 @@
 
-import { StateGraph, BaseMessage } from "@langchain/langgraph";
+import { StateGraph } from "@langchain/langgraph";
 import { ChatOpenAI } from "@langchain/openai";
 import { SolanaAgentKit } from "solana-agent-kit";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
@@ -20,7 +20,7 @@ interface StateGraphConfig {
 }
 
 export class ArbiSentOrchestrator {
-  private graph: StateGraph;
+  private graph: StateGraph<StateGraphConfig>;
   private researchAgent: ResearchAgent;
   private strategyAgent: StrategyAgent;
   private executionAgent: ExecutionAgent;
@@ -51,7 +51,7 @@ export class ArbiSentOrchestrator {
     this.executionAgent = new ExecutionAgent({ llm });
 
     // Initialize StateGraph
-    this.graph = new StateGraph();
+    this.graph = new StateGraph<StateGraphConfig>({ state: { query: "", context: {}, history: [], activeAgent: "", status: "running", data: {} } });
 
     this.setupWorkflow();
   }
