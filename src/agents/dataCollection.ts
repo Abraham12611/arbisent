@@ -1,3 +1,4 @@
+
 import { MarketData, SentimentData } from "../types/agent";
 
 export class DataCollectionAgent {
