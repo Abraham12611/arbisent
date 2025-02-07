@@ -8,9 +8,11 @@ import { OpenAIEmbeddings } from "@langchain/openai";
 import { ResearchAgent } from "./research";
 import StrategyAgent from "./strategy";
 import ExecutionAgent from "./execution";
-import { WorkflowState, StateDefinition } from "../types/agent";
+import { WorkflowState } from "../types/agent";
 
 const END = "__end__";
+
+type Node = "__start__" | "research" | "strategy" | "execution" | typeof END;
 
 interface StateGraphConfig {
   initialState: WorkflowState;
@@ -47,23 +49,16 @@ export class ArbiSentOrchestrator {
     this.strategyAgent = new StrategyAgent(llm);
     this.executionAgent = new ExecutionAgent({ llm });
 
-    // Initialize StateGraph with proper config
-    this.graph = new StateGraph({
-      initialState: {
-        query: "",
-        context: {},
-        history: [],
-        activeAgent: "__start__",
-        status: "running",
-        data: {}
-      }
+    // Initialize StateGraph
+    this.graph = StateGraph.fromConfig<StateGraphConfig, Node>({
+      channels: {},
     });
 
     this.setupWorkflow();
   }
 
   private setupWorkflow() {
-    // Add nodes to the graph with proper typing
+    // Add nodes to the graph
     this.graph.addNode("research", {
       value: async (state: WorkflowState): Promise<WorkflowState> => {
         state.activeAgent = "research";
@@ -104,33 +99,33 @@ export class ArbiSentOrchestrator {
       }
     });
 
-    // Define workflow edges
+    // Define edges
     this.graph.setEntryPoint("__start__");
-    this.graph.addEdge("__start__", "research");
-    this.graph.addEdge("research", "strategy");
-    this.graph.addEdge("strategy", "execution");
-    this.graph.addEdge("execution", END);
+    this.graph.addEdge("__start__" as Node, "research" as Node);
+    this.graph.addEdge("research" as Node, "strategy" as Node);
+    this.graph.addEdge("strategy" as Node, "execution" as Node);
+    this.graph.addEdge("execution" as Node, END);
 
     // Add conditional edges for error handling
     this.graph.addConditionalEdges(
-      "research",
+      "research" as Node,
       (state: WorkflowState) => {
         if (state.data?.research?.error) {
           state.status = 'failed';
           return END;
         }
-        return "strategy";
+        return "strategy" as Node;
       }
     );
 
     this.graph.addConditionalEdges(
-      "strategy",
+      "strategy" as Node,
       (state: WorkflowState) => {
         if (state.data?.strategy?.error) {
           state.status = 'failed';
           return END;
         }
-        return "execution";
+        return "execution" as Node;
       }
     );
   }
@@ -141,7 +136,6 @@ export class ArbiSentOrchestrator {
     sentiment: any;
     parameters: any;
   }): Promise<WorkflowState> {
-    // Initialize workflow state
     const initialState: WorkflowState = {
       query: "arbitrage_execution",
       context: input,
@@ -152,12 +146,9 @@ export class ArbiSentOrchestrator {
     };
 
     try {
-      // Run the workflow
       const app = this.graph.compile();
-      const result = await app.invoke({
-        initialState
-      });
-      return result.initialState;
+      const result = await app.invoke({ state: initialState });
+      return result.state;
     } catch (error: any) {
       console.error("Workflow execution failed:", error);
       return {

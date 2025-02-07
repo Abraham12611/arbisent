@@ -1,8 +1,9 @@
+
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import type { JsonWalletAddresses } from "@/types/preferences";
+import type { JsonWalletAddresses, JsonWalletAddress } from "@/types/preferences";
 
 interface WalletConnectorProps {
   onClose?: () => void;
@@ -35,11 +36,10 @@ export function WalletConnector({ onClose }: WalletConnectorProps) {
         ...walletAddresses,
         phantom: {
           address: walletAddress,
-          type: 'phantom',
-          network: 'solana',
+          chain: 'solana',
           isDefault: isFirstWallet,
-          connected_at: new Date().toISOString(),
-        }
+          lastUsed: new Date().toISOString(),
+        } as JsonWalletAddress
       };
 
       const { error } = await supabase.from('profiles').update({
@@ -84,11 +84,10 @@ export function WalletConnector({ onClose }: WalletConnectorProps) {
         ...walletAddresses,
         metamask: {
           address: walletAddress,
-          type: 'metamask',
-          network: 'ethereum',
+          chain: 'ethereum',
           isDefault: isFirstWallet,
-          connected_at: new Date().toISOString(),
-        }
+          lastUsed: new Date().toISOString(),
+        } as JsonWalletAddress
       };
 
       const { error } = await supabase.from('profiles').update({

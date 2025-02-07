@@ -10,7 +10,7 @@ export interface WalletAddress {
   balance?: string;
 }
 
-export interface JsonWalletAddress {
+export interface JsonWalletAddress extends Record<string, Json> {
   address: string;
   label?: string;
   isDefault: boolean;
@@ -19,7 +19,7 @@ export interface JsonWalletAddress {
   balance?: string;
 }
 
-export interface JsonWalletAddresses {
+export interface JsonWalletAddresses extends Record<string, Json> {
   phantom?: JsonWalletAddress;
   metamask?: JsonWalletAddress;
 }
