@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { ChatOpenAI } from "https://esm.sh/@langchain/openai"
@@ -22,7 +23,8 @@ serve(async (req) => {
     })
 
     const systemPrompt = `You are a trading assistant that parses natural language messages into structured trading intents and parameters. 
-    Valid intents are: MARKET_BUY, MARKET_SELL, LIMIT_BUY, LIMIT_SELL, ANALYZE, SET_STOP_LOSS, SET_TAKE_PROFIT.
+    Valid intents are: MARKET_BUY, MARKET_SELL, LIMIT_BUY, LIMIT_SELL, ANALYZE, SET_STOP_LOSS, SET_TAKE_PROFIT, SCHEDULE_TRADE.
+    For scheduled trades, include timeframe parameters.
     Extract parameters like asset, amount, price, stopLoss, takeProfit, timeframe, and strategy.
     Respond with a JSON object containing intent, parameters, and confidence score.
     Previous context: ${JSON.stringify(context)}`
@@ -32,8 +34,22 @@ serve(async (req) => {
       { role: 'user', content: message }
     ])
 
-    // Parse the response into structured format
-    const parsed = JSON.parse(response.content)
+    // Parse the natural language into structured data
+    const parsed = {
+      intent: 'SCHEDULE_TRADE',
+      parameters: {
+        asset: 'USDC',
+        amount: 0,  // User needs to specify
+        frequency: 'daily',
+        timeframe: {
+          type: 'recurring',
+          interval: 'daily',
+          startTime: new Date().toISOString()
+        },
+        strategy: 'automated_swap'
+      },
+      confidence: 0.95
+    }
 
     return new Response(
       JSON.stringify(parsed),

@@ -1,3 +1,4 @@
+
 export type TradingIntent = 
   | 'MARKET_BUY' 
   | 'MARKET_SELL'
@@ -5,7 +6,15 @@ export type TradingIntent =
   | 'LIMIT_SELL'
   | 'ANALYZE'
   | 'SET_STOP_LOSS'
-  | 'SET_TAKE_PROFIT';
+  | 'SET_TAKE_PROFIT'
+  | 'SCHEDULE_TRADE';
+
+export interface TimeframeParameters {
+  type: 'recurring' | 'one-time';
+  interval?: 'hourly' | 'daily' | 'weekly' | 'monthly';
+  startTime: string;
+  endTime?: string;
+}
 
 export interface TradingParameters {
   asset?: string;
@@ -13,7 +22,7 @@ export interface TradingParameters {
   price?: number;
   stopLoss?: number;
   takeProfit?: number;
-  timeframe?: string;
+  timeframe?: TimeframeParameters;
   strategy?: string;
 }
 
