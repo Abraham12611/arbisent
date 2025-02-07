@@ -19,7 +19,7 @@ export interface JsonWalletAddress extends Record<string, Json> {
   balance?: string;
 }
 
-export interface JsonWalletAddresses {
+export interface JsonWalletAddresses extends Record<string, Json> {
   phantom?: JsonWalletAddress;
   metamask?: JsonWalletAddress;
 }
@@ -55,7 +55,7 @@ export interface TradingPreferences {
   };
 }
 
-export interface JsonTradingPreferences {
+export interface JsonTradingPreferences extends Record<string, Json> {
   default_pairs: string[];
   risk_management: {
     default_stop_loss_percentage: number;

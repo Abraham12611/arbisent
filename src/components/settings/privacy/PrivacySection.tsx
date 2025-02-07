@@ -1,11 +1,15 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { JsonPrivacySettings, PrivacySettings } from "@/types/preferences";
+
+interface PrivacySettings {
+  share_trading_analytics: boolean;
+  collect_usage_data: boolean;
+  public_profile: boolean;
+}
 
 export function PrivacySection() {
   const [settings, setSettings] = useState<PrivacySettings>({
@@ -32,12 +36,7 @@ export function PrivacySection() {
       if (error) throw error;
 
       if (profile?.privacy_settings) {
-        const privacySettings = profile.privacy_settings as JsonPrivacySettings;
-        setSettings({
-          share_trading_analytics: !!privacySettings.share_trading_analytics,
-          collect_usage_data: !!privacySettings.collect_usage_data,
-          public_profile: !!privacySettings.public_profile,
-        });
+        setSettings(profile.privacy_settings as PrivacySettings);
       }
     } catch (error) {
       console.error("Error loading privacy settings:", error);
@@ -53,7 +52,7 @@ export function PrivacySection() {
       
       const { error } = await supabase
         .from("profiles")
-        .update({ privacy_settings: newSettings as JsonPrivacySettings })
+        .update({ privacy_settings: newSettings })
         .eq("id", user.id);
 
       if (error) throw error;
