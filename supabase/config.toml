@@ -1,4 +1,5 @@
+
 project_id = "jpliglvivfjbnemebqca"
 
-[functions.dex-monitor]
+[functions.parse-trade-intent]
 verify_jwt = false
