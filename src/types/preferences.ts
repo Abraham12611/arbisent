@@ -19,12 +19,23 @@ export interface JsonWalletAddress {
   balance?: string;
 }
 
+export interface JsonWalletAddresses {
+  phantom?: JsonWalletAddress;
+  metamask?: JsonWalletAddress;
+}
+
 export interface WalletAddresses {
   phantom?: WalletAddress;
   metamask?: WalletAddress;
 }
 
 export interface EmailPreferences {
+  marketing: boolean;
+  trade_alerts: boolean;
+  security_notifications: boolean;
+}
+
+export interface JsonEmailPreferences extends Record<string, Json> {
   marketing: boolean;
   trade_alerts: boolean;
   security_notifications: boolean;
@@ -44,7 +55,27 @@ export interface TradingPreferences {
   };
 }
 
+export interface JsonTradingPreferences extends Record<string, Json> {
+  default_pairs: string[];
+  risk_management: {
+    default_stop_loss_percentage: number;
+    default_take_profit_percentage: number;
+    max_position_size_usd: number;
+  };
+  interface_preferences: {
+    chart_type: string;
+    default_timeframe: string;
+    layout: string;
+  };
+}
+
 export interface PrivacySettings {
+  share_trading_analytics: boolean;
+  collect_usage_data: boolean;
+  public_profile: boolean;
+}
+
+export interface JsonPrivacySettings extends Record<string, Json> {
   share_trading_analytics: boolean;
   collect_usage_data: boolean;
   public_profile: boolean;
@@ -53,8 +84,8 @@ export interface PrivacySettings {
 export interface ProfileFormValues {
   username?: string;
   avatar_url?: string;
-  email_preferences?: EmailPreferences;
-  trading_preferences?: TradingPreferences;
-  privacy_settings?: PrivacySettings;
-  wallet_addresses?: WalletAddresses;
+  email_preferences?: JsonEmailPreferences;
+  trading_preferences?: JsonTradingPreferences;
+  privacy_settings?: JsonPrivacySettings;
+  wallet_addresses?: JsonWalletAddresses;
 }

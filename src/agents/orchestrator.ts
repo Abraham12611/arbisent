@@ -1,3 +1,4 @@
+
 import { StateGraph } from "@langchain/langgraph";
 import { ChatOpenAI } from "@langchain/openai";
 import { SolanaAgentKit } from "solana-agent-kit";
@@ -9,10 +10,10 @@ import StrategyAgent from "./strategy";
 import ExecutionAgent from "./execution";
 import { WorkflowState, StateDefinition } from "../types/agent";
 
-type StateGraphConfig = {
-  channels: {
-    workflow: () => Promise<WorkflowState>;
-  };
+const END = "__end__";
+
+interface StateGraphConfig {
+  initialState: WorkflowState;
 }
 
 export class ArbiSentOrchestrator {
@@ -24,7 +25,7 @@ export class ArbiSentOrchestrator {
   constructor() {
     // Initialize LLM
     const llm = new ChatOpenAI({
-      modelName: "gpt-4o-mini",
+      modelName: "gpt-4-mini",
       temperature: 0.7,
       openAIApiKey: process.env.OPENAI_API_KEY,
     });
@@ -46,17 +47,15 @@ export class ArbiSentOrchestrator {
     this.strategyAgent = new StrategyAgent(llm);
     this.executionAgent = new ExecutionAgent({ llm });
 
-    // Initialize StateGraph
-    this.graph = new StateGraph<StateGraphConfig>({
-      channels: {
-        workflow: async (): Promise<WorkflowState> => ({
-          query: "",
-          context: {},
-          history: [],
-          activeAgent: "__start__",
-          status: "running",
-          data: {}
-        })
+    // Initialize StateGraph with proper config
+    this.graph = new StateGraph({
+      initialState: {
+        query: "",
+        context: {},
+        history: [],
+        activeAgent: "__start__",
+        status: "running",
+        data: {}
       }
     });
 
@@ -105,8 +104,9 @@ export class ArbiSentOrchestrator {
       }
     });
 
-    // Define edges
-    this.graph.setEntryPoint("research");
+    // Define workflow edges
+    this.graph.setEntryPoint("__start__");
+    this.graph.addEdge("__start__", "research");
     this.graph.addEdge("research", "strategy");
     this.graph.addEdge("strategy", "execution");
     this.graph.addEdge("execution", END);
@@ -155,9 +155,9 @@ export class ArbiSentOrchestrator {
       // Run the workflow
       const app = this.graph.compile();
       const result = await app.invoke({
-        workflow: initialState
+        initialState
       });
-      return result.workflow as WorkflowState;
+      return result.initialState;
     } catch (error: any) {
       console.error("Workflow execution failed:", error);
       return {
