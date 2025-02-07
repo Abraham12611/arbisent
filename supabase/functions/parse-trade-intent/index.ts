@@ -1,8 +1,9 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { ChatOpenAI } from "https://esm.sh/@langchain/openai"
+import { ChatOpenAI } from "npm:@langchain/openai"
 
+// CORS headers for browser requests
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -15,11 +16,13 @@ serve(async (req) => {
   }
 
   try {
+    // Get OpenAI API key from environment
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY')
     if (!openAIApiKey) {
       throw new Error('OpenAI API key not configured')
     }
 
+    // Parse request body
     const { message, context } = await req.json()
     if (!message) {
       throw new Error('Message is required')
@@ -28,8 +31,9 @@ serve(async (req) => {
     console.log('Processing message:', message)
     console.log('With context:', context)
 
+    // Initialize LangChain ChatOpenAI
     const llm = new ChatOpenAI({
-      modelName: 'gpt-3.5-turbo',
+      modelName: 'gpt-4o-mini',
       temperature: 0.3,
       openAIApiKey,
     })
@@ -40,7 +44,7 @@ serve(async (req) => {
     Respond with ONLY a JSON object containing intent, parameters, and confidence score.
     Previous context: ${JSON.stringify(context)}`
 
-    const response = await llm.call([
+    const response = await llm.invoke([
       { role: 'system', content: systemPrompt },
       { role: 'user', content: message }
     ])
