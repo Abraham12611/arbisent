@@ -12,16 +12,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-interface WalletAddress {
-  address: string;
-  isDefault: boolean;
-}
-
-interface WalletAddresses {
-  phantom?: WalletAddress;
-  metamask?: WalletAddress;
-}
+import { WalletService, WalletAddress, WalletAddresses } from "@/services/wallet";
+import { useWallet } from '@solana/wallet-adapter-react';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface NotificationSettings {
   onConnect: boolean;
@@ -38,6 +31,15 @@ export function ConnectedWallets() {
     lowBalance: true,
   });
   const [loading, setLoading] = useState(true);
+  const { publicKey, connected } = useWallet();
+  const [isChecking, setIsChecking] = useState(false);
+  const [walletStatus, setWalletStatus] = useState<{
+    [key: string]: {
+      balance: string;
+      isValid: boolean;
+      lastChecked: Date;
+    }
+  }>({});
 
   useEffect(() => {
     fetchWalletData();
@@ -45,6 +47,7 @@ export function ConnectedWallets() {
 
   const fetchWalletData = async () => {
     try {
+      setIsChecking(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
@@ -55,12 +58,29 @@ export function ConnectedWallets() {
         .single();
 
       if (profile?.wallet_addresses) {
-        setWalletAddresses(profile.wallet_addresses as WalletAddresses);
+        const addresses = profile.wallet_addresses as WalletAddresses;
+        setWalletAddresses(addresses);
+
+        const status: typeof walletStatus = {};
+        for (const [type, wallet] of Object.entries(addresses)) {
+          if (wallet) {
+            const isValid = await WalletService.validateWallet(wallet.address, wallet.chain);
+            const balance = await WalletService.getWalletBalance(wallet.address, wallet.chain);
+            status[type] = {
+              balance,
+              isValid,
+              lastChecked: new Date()
+            };
+          }
+        }
+        setWalletStatus(status);
       }
-      setLoading(false);
     } catch (error) {
       console.error('Error fetching wallet data:', error);
       toast.error('Failed to load wallet data');
+    } finally {
+      setIsChecking(false);
+      setLoading(false);
     }
   };
 
@@ -72,18 +92,14 @@ export function ConnectedWallets() {
       const updatedAddresses = { ...walletAddresses };
       delete updatedAddresses[type];
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({ wallet_addresses: updatedAddresses })
-        .eq('id', user.id);
-
-      if (error) throw error;
+      const result = await WalletService.updateWalletAddresses(user.id, updatedAddresses);
+      if (!result.success) throw new Error(result.error);
 
       setWalletAddresses(updatedAddresses);
       toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} wallet removed`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error removing wallet:', error);
-      toast.error('Failed to remove wallet');
+      toast.error(error.message || 'Failed to remove wallet');
     }
   };
 
@@ -123,6 +139,38 @@ export function ConnectedWallets() {
       [type]: !prev[type]
     }));
   };
+
+  useEffect(() => {
+    if (connected && publicKey && !walletAddresses.phantom) {
+      const autoConnectPhantom = async () => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+
+          const updatedAddresses = {
+            ...walletAddresses,
+            phantom: {
+              address: publicKey.toString(),
+              isDefault: true,
+              chain: 'solana',
+              lastUsed: new Date()
+            }
+          };
+
+          const result = await WalletService.updateWalletAddresses(user.id, updatedAddresses);
+          if (!result.success) throw new Error(result.error);
+
+          setWalletAddresses(updatedAddresses);
+          toast.success('Phantom wallet connected automatically');
+        } catch (error: any) {
+          console.error('Error auto-connecting Phantom wallet:', error);
+          toast.error(error.message || 'Failed to auto-connect wallet');
+        }
+      };
+
+      autoConnectPhantom();
+    }
+  }, [connected, publicKey]);
 
   return (
     <div className="space-y-6">
@@ -171,6 +219,18 @@ export function ConnectedWallets() {
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <p className="text-sm text-muted-foreground">
+                    Balance: {walletStatus[type]?.balance || '0'} {type === 'phantom' ? 'SOL' : 'ETH'}
+                  </p>
+                  {!walletStatus[type]?.isValid && (
+                    <Alert variant="destructive">
+                      <AlertDescription>
+                        This wallet address appears to be invalid
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </div>
               </div>
             ))}
