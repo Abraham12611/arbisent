@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 import { ChatOpenAI } from "npm:@langchain/openai@0.0.14"
+import { SystemMessage, HumanMessage } from "npm:@langchain/core/messages"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -40,8 +41,8 @@ serve(async (req) => {
     Previous context: ${JSON.stringify(context)}`
 
     const response = await llm.call([
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: message }
+      new SystemMessage(systemPrompt),
+      new HumanMessage(message)
     ])
 
     console.log('LLM response:', response)
@@ -87,7 +88,7 @@ serve(async (req) => {
         confidence: 0.1
       }),
       { 
-        status: 200, // Return 200 even on error to handle it gracefully on client
+        status: 200,
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json' 
