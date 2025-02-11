@@ -17,6 +17,8 @@
     "@langchain/community": "^0.3.28",
     "@langchain/core": "^0.3.38",
     "@langchain/openai": "^0.4.2",
+    "@mantleio/contracts": "^0.3.0",
+    "@mantleio/sdk": "^1.0.5",
     "@mendable/firecrawl-js": "^1.16.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
@@ -58,6 +60,7 @@
     "date-fns": "^3.6.0",
     "dotenv": "^16.4.7",
     "embla-carousel-react": "^8.3.0",
+    "ethers": "^5.7.2",
     "input-otp": "^1.2.4",
     "jest": "^29.7.0",
     "langchain": "^0.3.15",
@@ -75,6 +78,7 @@
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.3",
+    "web3": "^1.10.4",
     "zod": "^3.23.8"
   },
   "devDependencies": {
