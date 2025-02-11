@@ -10,6 +10,9 @@ import { MessageInput } from "./MessageInput";
 import { useTradeNLU } from "@/hooks/useTradeNLU";
 import { Badge } from "@/components/ui/badge";
 import { ParsedTradeMessage } from "@/lib/nlu/types";
+import { TradeConfirmation } from "./TradeConfirmation";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface TradeExecutionModalProps {
   chatId?: string;
@@ -22,7 +25,8 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
   const [currentChatId, setCurrentChatId] = useState<string | undefined>(chatId);
   const [tradingPair, setTradingPair] = useState<string>("SOL/USDC");
   const [tradeType, setTradeType] = useState<string>("market");
-  const { processMessage, isProcessing, lastParsedMessage } = useTradeNLU();
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const { processMessage, isProcessing, lastParsedMessage, errors } = useTradeNLU();
 
   useEffect(() => {
     if (chatId) {
@@ -63,10 +67,29 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
       
       // Process message through NLU
       const parsedMessage = await processMessage(prompt);
-      if (!parsedMessage) return;
+      if (!parsedMessage) {
+        // Display validation errors if any
+        if (errors.length > 0) {
+          errors.forEach(error => toast.error(error));
+        }
+        return;
+      }
 
-      console.log("Parsed trade message:", parsedMessage);
+      // Show trade confirmation
+      setShowConfirmation(true);
       
+    } catch (error: any) {
+      console.error('Error processing trade:', error);
+      toast.error(error.message || "Failed to process trade");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleConfirmTrade = async () => {
+    if (!lastParsedMessage) return;
+
+    try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
       if (!user) throw new Error("No user found");
@@ -106,7 +129,7 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
         body: { 
           prompt,
           chatHistory: updatedHistory.slice(-10),
-          parsedIntent: parsedMessage,
+          parsedIntent: lastParsedMessage,
           tradeContext: {
             pair: tradingPair,
             type: tradeType
@@ -127,12 +150,11 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
       
       setChatHistory([...updatedHistory, aiMessage]);
       setPrompt("");
-      toast.success("Trade analysis received!");
+      setShowConfirmation(false);
+      toast.success("Trade executed successfully!");
     } catch (error: any) {
-      console.error('Error in trade execution:', error);
-      toast.error(error.message || "Failed to process trade");
-    } finally {
-      setIsLoading(false);
+      console.error('Error executing trade:', error);
+      toast.error(error.message || "Failed to execute trade");
     }
   };
 
@@ -154,62 +176,58 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
 
       <ChatHistory messages={chatHistory} />
 
-      {lastParsedMessage && (
-        <Card className="mb-4 bg-yellow-500/10 border-yellow-500/50">
+      {errors.length > 0 && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {errors.map((error, index) => (
+              <div key={index}>{error}</div>
+            ))}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {showConfirmation && lastParsedMessage ? (
+        <TradeConfirmation
+          trade={lastParsedMessage}
+          onConfirm={handleConfirmTrade}
+          onCancel={() => setShowConfirmation(false)}
+        />
+      ) : (
+        <Card className="bg-[#151822]/80 border-gray-800">
           <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Badge variant="outline" className="text-yellow-500 border-yellow-500">
-                {lastParsedMessage.intent}
-              </Badge>
-              <span className="text-sm text-gray-400">
-                Confidence: {(lastParsedMessage.confidence * 100).toFixed(1)}%
-              </span>
+            <div className="flex gap-4 mb-4">
+              <Select value={tradingPair} onValueChange={setTradingPair}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Select pair" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="SOL/USDC">SOL/USDC</SelectItem>
+                  <SelectItem value="ETH/USDC">ETH/USDC</SelectItem>
+                  <SelectItem value="BTC/USDC">BTC/USDC</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={tradeType} onValueChange={setTradeType}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Trade type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="market">Market</SelectItem>
+                  <SelectItem value="limit">Limit</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div className="text-sm text-gray-300">
-              {Object.entries(lastParsedMessage.parameters).map(([key, value]) => (
-                <div key={key} className="flex items-center gap-2">
-                  <span className="font-medium">{key}:</span>
-                  <span>{value}</span>
-                </div>
-              ))}
-            </div>
+
+            <MessageInput
+              value={prompt}
+              onChange={setPrompt}
+              onSubmit={handleSubmit}
+              isLoading={isLoading || isProcessing}
+            />
           </CardContent>
         </Card>
       )}
-
-      <Card className="bg-[#151822]/80 border-gray-800">
-        <CardContent className="p-4">
-          <div className="flex gap-4 mb-4">
-            <Select value={tradingPair} onValueChange={setTradingPair}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select pair" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="SOL/USDC">SOL/USDC</SelectItem>
-                <SelectItem value="ETH/USDC">ETH/USDC</SelectItem>
-                <SelectItem value="BTC/USDC">BTC/USDC</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={tradeType} onValueChange={setTradeType}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Trade type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="market">Market</SelectItem>
-                <SelectItem value="limit">Limit</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <MessageInput
-            value={prompt}
-            onChange={setPrompt}
-            onSubmit={handleSubmit}
-            isLoading={isLoading || isProcessing}
-          />
-        </CardContent>
-      </Card>
 
       {chatHistory.length === 0 && <TradingContextCards />}
     </div>
