@@ -1,6 +1,7 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
-import { ChatOpenAI } from "npm:@langchain/openai@0.0.14"
+import { ChatOpenAI } from "https://esm.sh/@langchain/openai@0.0.14"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
