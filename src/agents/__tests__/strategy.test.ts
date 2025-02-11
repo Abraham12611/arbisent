@@ -1,6 +1,7 @@
 import { describe, expect, test, beforeAll } from '@jest/globals';
 import { ChatOpenAI } from "@langchain/openai";
 import { Document } from "@langchain/core/documents";
+import { BigNumber } from "ethers";
 import StrategyAgent from "../strategy";
 
 describe("StrategyAgent", () => {
@@ -102,4 +103,131 @@ describe("StrategyAgent", () => {
     expect(result.riskAssessment.riskLevel).toBe('high');
     expect(result.riskAssessment.confidenceScore).toBeGreaterThan(70);
   }, 60000);
+
+  test("should generate cross-chain strategy", async () => {
+    const input = {
+      marketData: {
+        sourceAsset: "ETH",
+        targetAsset: "USDC",
+        sourcePrice: 3000,
+        targetPrice: 1,
+        bridgeProtocols: {
+          "LayerZero": { fee: "0.001 ETH", time: "10m" },
+          "Across": { fee: "0.0015 ETH", time: "15m" }
+        }
+      },
+      research: [
+        new Document({
+          pageContent: "LayerZero bridge has shown 99.9% reliability over the past month.",
+          metadata: { source: "bridge-analysis" }
+        })
+      ],
+      sentiment: {
+        overall: "positive",
+        confidence: 0.85
+      },
+      sourceChainId: 1, // Ethereum
+      targetChainId: 5001 // Mantle
+    };
+
+    const result = await agent.process(input);
+
+    // Test cross-chain strategy structure
+    expect(result.strategy.crossChainDetails).toBeDefined();
+    expect(result.strategy.crossChainDetails).toMatchObject({
+      sourceChain: {
+        chainId: 1,
+        name: 'Ethereum Mainnet'
+      },
+      targetChain: {
+        chainId: 5001,
+        name: 'Mantle'
+      },
+      route: {
+        steps: expect.arrayContaining([
+          expect.objectContaining({
+            type: expect.stringMatching(/^(swap|bridge|flashLoan)$/),
+            chainId: expect.any(Number),
+            protocol: expect.any(String),
+            fromToken: expect.any(String),
+            toToken: expect.any(String),
+            estimatedGas: expect.any(BigNumber)
+          })
+        ]),
+        totalGasEstimate: expect.any(BigNumber),
+        estimatedDuration: expect.any(Number)
+      }
+    });
+
+    // Test cross-chain risk assessment
+    expect(result.riskAssessment.crossChainRisks).toBeDefined();
+    expect(result.riskAssessment.crossChainRisks).toMatchObject({
+      bridgeRisk: expect.any(String),
+      settlementRisk: expect.any(String),
+      gasPriceRisk: expect.any(String)
+    });
+
+    // Test gas optimization recommendations
+    expect(result.gasOptimization).toBeDefined();
+    expect(result.gasOptimization).toMatchObject({
+      recommendedTiming: expect.any(String),
+      estimatedSavings: expect.any(String),
+      alternativeRoutes: expect.arrayContaining([
+        expect.objectContaining({
+          description: expect.any(String),
+          estimatedGas: expect.any(String),
+          tradeoffs: expect.arrayContaining([expect.any(String)])
+        })
+      ])
+    });
+  });
+
+  test("should handle invalid chain configurations", async () => {
+    const input = {
+      marketData: {
+        sourceAsset: "ETH",
+        targetAsset: "USDC"
+      },
+      research: [],
+      sentiment: {
+        overall: "neutral",
+        confidence: 0.5
+      },
+      sourceChainId: 999999, // Invalid chain
+      targetChainId: 5001
+    };
+
+    await expect(agent.process(input)).rejects.toThrow('Invalid chain configuration');
+  });
+
+  test("should optimize gas usage for cross-chain transactions", async () => {
+    const input = {
+      marketData: {
+        sourceAsset: "ETH",
+        targetAsset: "USDC",
+        gasPrices: {
+          ethereum: "50 gwei",
+          mantle: "0.1 gwei"
+        },
+        peakHours: {
+          ethereum: ["14:00-18:00 UTC"],
+          mantle: ["12:00-16:00 UTC"]
+        }
+      },
+      research: [],
+      sentiment: {
+        overall: "positive",
+        confidence: 0.7
+      },
+      sourceChainId: 1,
+      targetChainId: 5001
+    };
+
+    const result = await agent.process(input);
+
+    expect(result.gasOptimization).toBeDefined();
+    expect(result.gasOptimization?.recommendedTiming).toMatch(/UTC/);
+    expect(result.gasOptimization?.estimatedSavings).toBeDefined();
+    expect(result.gasOptimization?.alternativeRoutes.length).toBeGreaterThan(0);
+  });
 }); 
