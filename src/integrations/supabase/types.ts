@@ -236,6 +236,69 @@ export type Database = {
         }
         Relationships: []
       }
+      performance_metrics: {
+        Row: {
+          id: string
+          user_id: string | null
+          created_at: string | null
+          updated_at: string | null
+          total_trades: number
+          winning_trades: number
+          losing_trades: number
+          total_profit_loss: number
+          roi_percentage: number
+          average_trade_duration: number
+          largest_win: number
+          largest_loss: number
+          win_rate: number
+          profit_factor: number
+          sharpe_ratio: number
+          max_drawdown: number
+          chain_specific_metrics: Json | null
+          strategy_performance: Json | null
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+          total_trades: number
+          winning_trades: number
+          losing_trades: number
+          total_profit_loss: number
+          roi_percentage: number
+          average_trade_duration: number
+          largest_win: number
+          largest_loss: number
+          win_rate: number
+          profit_factor: number
+          sharpe_ratio: number
+          max_drawdown: number
+          chain_specific_metrics?: Json | null
+          strategy_performance?: Json | null
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+          total_trades?: number
+          winning_trades?: number
+          losing_trades?: number
+          total_profit_loss?: number
+          roi_percentage?: number
+          average_trade_duration?: number
+          largest_win?: number
+          largest_loss?: number
+          win_rate?: number
+          profit_factor?: number
+          sharpe_ratio?: number
+          max_drawdown?: number
+          chain_specific_metrics?: Json | null
+          strategy_performance?: Json | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
