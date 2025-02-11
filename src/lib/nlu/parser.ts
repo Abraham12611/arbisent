@@ -14,6 +14,13 @@ export class TradingNLUParser {
     try {
       console.log('Parsing trade message:', message);
       
+      // Get session first
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        throw new Error('No active session');
+      }
+      
       // Call our edge function to process the message with GPT
       const { data, error } = await supabase.functions.invoke('parse-trade-intent', {
         body: { 
@@ -22,7 +29,7 @@ export class TradingNLUParser {
         },
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.auth.getSession()?.access_token}`
+          'Authorization': `Bearer ${session.access_token}`
         }
       });
 
