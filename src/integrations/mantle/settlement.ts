@@ -224,7 +224,14 @@ export class SettlementService {
     this.settlementContract.on('TransactionSubmitted', (txHash, from, timestamp) => {
       this.notifySubscribers(txHash, {
         type: 'submitted',
-        transaction: { hash: txHash, from },
+        transaction: {
+          hash: txHash,
+          from,
+          to: '0x0000000000000000000000000000000000000000', // Placeholder
+          value: BigNumber.from(0),
+          data: '0x',
+          nonce: 0
+        },
         status: { isSettled: false, confirmations: 0 },
         timestamp: timestamp.toNumber()
       });
@@ -233,7 +240,14 @@ export class SettlementService {
     this.settlementContract.on('TransactionSettled', (txHash, blockNumber, timestamp) => {
       this.notifySubscribers(txHash, {
         type: 'settled',
-        transaction: { hash: txHash },
+        transaction: {
+          hash: txHash,
+          from: '0x0000000000000000000000000000000000000000', // Will be filled from previous event
+          to: '0x0000000000000000000000000000000000000000',
+          value: BigNumber.from(0),
+          data: '0x',
+          nonce: 0
+        },
         status: { isSettled: true, blockNumber: blockNumber.toNumber(), confirmations: 1 },
         timestamp: timestamp.toNumber()
       });
@@ -242,7 +256,14 @@ export class SettlementService {
     this.settlementContract.on('SettlementFailed', (txHash, reason) => {
       this.notifySubscribers(txHash, {
         type: 'failed',
-        transaction: { hash: txHash },
+        transaction: {
+          hash: txHash,
+          from: '0x0000000000000000000000000000000000000000',
+          to: '0x0000000000000000000000000000000000000000',
+          value: BigNumber.from(0),
+          data: '0x',
+          nonce: 0
+        },
         status: { isSettled: false, confirmations: 0, error: reason },
         timestamp: Date.now()
       });
