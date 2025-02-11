@@ -19,25 +19,45 @@ export class TradingNLUParser {
         body: { 
           message,
           context: this.context
+        },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabase.auth.getSession()?.access_token}`
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(`Failed to process message: ${error.message}`);
+      }
+
+      if (!data) {
+        throw new Error('No response from parse-trade-intent function');
+      }
 
       // Update conversation context
       this.context.messageHistory.push(message);
-      this.context.currentAsset = data.parameters.asset || this.context.currentAsset;
+      this.context.currentAsset = data.parameters?.asset || this.context.currentAsset;
       this.context.lastIntent = data.intent;
 
       return {
-        intent: data.intent,
-        parameters: data.parameters,
-        confidence: data.confidence,
+        intent: data.intent || 'ANALYZE',
+        parameters: data.parameters || {},
+        confidence: data.confidence || 0.5,
         rawMessage: message
       };
     } catch (error) {
       console.error('Error parsing trade message:', error);
-      throw error;
+      // Return a fallback response instead of throwing
+      return {
+        intent: 'ANALYZE',
+        parameters: {
+          strategy: 'error_fallback',
+          asset: this.context.currentAsset
+        },
+        confidence: 0.1,
+        rawMessage: message
+      };
     }
   }
 
