@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { SolanaAuth } from '@crossmint/solana-auth-base';
+import jwt from 'jsonwebtoken';
 
 export const AUTH_DOMAIN = process.env.NEXT_PUBLIC_AUTH_DOMAIN || 'your-domain.com';
 
@@ -7,7 +8,7 @@ export const AUTH_DOMAIN = process.env.NEXT_PUBLIC_AUTH_DOMAIN || 'your-domain.c
 const authAdapter = () => ({
   async saveSigninAttempt(attempt: { nonce: string; ttl: number; pubkey: string }) {
     // Store sign-in attempt in your database
-    const { data, error } = await supabase1
+    const { data, error } = await supabase
       .from('auth_attempts')
       .upsert([attempt])
       .single();
@@ -38,7 +39,7 @@ const authAdapter = () => ({
     return token;
   },
 
-  async getTLL(pubkey: string) {
+  async getTTL(pubkey: string) {
     // Get TTL from database
     const { data, error } = await supabase
       .from('auth_attempts')
@@ -51,7 +52,8 @@ const authAdapter = () => ({
   }
 });
 
-export const auth = new SolanaAuth({
+// Initialize Solana Auth with our custom adapter
+export const solanaAuth = SolanaAuth({
   adapter: authAdapter(),
-  domain: AUTH_DOMAIN
+  authDomain: AUTH_DOMAIN
 }); 
