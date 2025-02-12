@@ -299,6 +299,138 @@ export type Database = {
         }
         Relationships: []
       }
+      trade_schedules: {
+        Row: {
+          id: string
+          user_id: string
+          asset: string
+          amount: number
+          frequency: string
+          custom_interval: number | null
+          start_time: string
+          end_time: string | null
+          is_active: boolean
+          last_executed: string | null
+          next_execution: string | null
+          execution_count: number
+          max_executions: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          asset: string
+          amount: number
+          frequency: string
+          custom_interval?: number | null
+          start_time: string
+          end_time?: string | null
+          is_active?: boolean
+          last_executed?: string | null
+          next_execution?: string | null
+          execution_count?: number
+          max_executions?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          asset?: string
+          amount?: number
+          frequency?: string
+          custom_interval?: number | null
+          start_time?: string
+          end_time?: string | null
+          is_active?: boolean
+          last_executed?: string | null
+          next_execution?: string | null
+          execution_count?: number
+          max_executions?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      trade_executions: {
+        Row: {
+          id: string
+          schedule_id: string | null
+          user_id: string
+          asset: string
+          amount: number
+          price: number | null
+          status: string
+          error: string | null
+          execution_time: string
+          completed_at: string | null
+          transaction_hash: string | null
+          gas_used: number | null
+          gas_price: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          schedule_id?: string | null
+          user_id: string
+          asset: string
+          amount: number
+          price?: number | null
+          status: string
+          error?: string | null
+          execution_time?: string
+          completed_at?: string | null
+          transaction_hash?: string | null
+          gas_used?: number | null
+          gas_price?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          schedule_id?: string | null
+          user_id?: string
+          asset?: string
+          amount?: number
+          price?: number | null
+          status?: string
+          error?: string | null
+          execution_time?: string
+          completed_at?: string | null
+          transaction_hash?: string | null
+          gas_used?: number | null
+          gas_price?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      trade_status_updates: {
+        Row: {
+          id: string
+          execution_id: string
+          status: string
+          message: string | null
+          details: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          execution_id: string
+          status: string
+          message?: string | null
+          details?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          execution_id?: string
+          status?: string
+          message?: string | null
+          details?: Json | null
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
