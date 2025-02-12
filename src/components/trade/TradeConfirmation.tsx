@@ -4,6 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
 import { ParsedTradeMessage } from '@/lib/nlu/types';
+import { TradeStatusCard } from './TradeStatusCard';
+import { useTradeStatus } from '@/hooks/useTradeStatus';
+import { TradeStatusService } from '@/lib/status/service';
+
+const statusService = new TradeStatusService();
 
 interface TradeConfirmationProps {
   trade: ParsedTradeMessage;
@@ -13,11 +18,53 @@ interface TradeConfirmationProps {
 
 export function TradeConfirmation({ trade, onConfirm, onCancel }: TradeConfirmationProps) {
   const [isConfirming, setIsConfirming] = useState(false);
+  const [executionId, setExecutionId] = useState<string>();
+  const { execution, updates } = useTradeStatus(executionId);
 
   const handleConfirm = async () => {
     try {
       setIsConfirming(true);
+
+      // Create a new trade execution
+      const newExecution = await statusService.createExecution({
+        userId: 'current-user-id', // This should come from auth context
+        asset: trade.parameters.asset!,
+        amount: trade.parameters.amount!,
+        executionTime: new Date()
+      });
+
+      setExecutionId(newExecution.id);
+
+      // Add initial status update
+      await statusService.addStatusUpdate(
+        newExecution.id,
+        'info',
+        'Initiating trade execution',
+        trade.parameters
+      );
+
+      // Execute the trade
       await onConfirm();
+
+      // Update status to completed
+      await statusService.updateExecutionStatus(newExecution.id, 'completed');
+      await statusService.addStatusUpdate(
+        newExecution.id,
+        'success',
+        'Trade executed successfully'
+      );
+    } catch (error) {
+      if (executionId) {
+        await statusService.updateExecutionStatus(executionId, 'failed', {
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+        await statusService.addStatusUpdate(
+          executionId,
+          'error',
+          'Trade execution failed',
+          { error: error instanceof Error ? error.message : 'Unknown error' }
+        );
+      }
     } finally {
       setIsConfirming(false);
     }
@@ -35,6 +82,10 @@ export function TradeConfirmation({ trade, onConfirm, onCancel }: TradeConfirmat
         return value;
     }
   };
+
+  if (execution) {
+    return <TradeStatusCard execution={execution} updates={updates} />;
+  }
 
   return (
     <Card className="w-full bg-card border-border">

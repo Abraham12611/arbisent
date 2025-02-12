@@ -2,7 +2,7 @@ import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CheckCircle2, XCircle, AlertCircle, Info } from 'lucide-react';
-import { TradeExecution, TradeStatusUpdate } from '@/lib/status/types';
+import { TradeExecution, TradeStatusUpdate, TradeStatus, StatusType } from '@/lib/status/types';
 
 interface TradeStatusCardProps {
   execution: TradeExecution;
@@ -10,7 +10,7 @@ interface TradeStatusCardProps {
   className?: string;
 }
 
-const StatusIcon = {
+const StatusIcon: Record<TradeStatus | StatusType, any> = {
   pending: Loader2,
   executing: Loader2,
   completed: CheckCircle2,
@@ -21,7 +21,7 @@ const StatusIcon = {
   success: CheckCircle2
 };
 
-const StatusColor = {
+const StatusColor: Record<TradeStatus | StatusType, string> = {
   pending: 'text-blue-500',
   executing: 'text-blue-500',
   completed: 'text-green-500',
@@ -77,7 +77,7 @@ export function TradeStatusCard({ execution, updates, className = '' }: TradeSta
         </div>
 
         <div className="border rounded-lg divide-y">
-          {updates.map((update, index) => {
+          {updates.map((update) => {
             const UpdateIcon = StatusIcon[update.status];
             const updateColorClass = StatusColor[update.status];
 
@@ -87,9 +87,7 @@ export function TradeStatusCard({ execution, updates, className = '' }: TradeSta
                 className="flex items-start gap-3 p-3 text-sm"
               >
                 <UpdateIcon 
-                  className={`${updateColorClass} h-5 w-5 mt-0.5 flex-shrink-0 ${
-                    update.status === 'executing' ? 'animate-spin' : ''
-                  }`}
+                  className={`${updateColorClass} h-5 w-5 mt-0.5 flex-shrink-0`}
                 />
                 <div className="flex-1 space-y-1">
                   <p className="font-medium">{update.message}</p>
