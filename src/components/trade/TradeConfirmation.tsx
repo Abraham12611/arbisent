@@ -7,8 +7,10 @@ import { ParsedTradeMessage } from '@/lib/nlu/types';
 import { TradeStatusCard } from './TradeStatusCard';
 import { useTradeStatus } from '@/hooks/useTradeStatus';
 import { TradeStatusService } from '@/lib/status/service';
+import { ErrorRecoveryService } from '@/lib/error/service';
 
 const statusService = new TradeStatusService();
+const errorService = new ErrorRecoveryService();
 
 interface TradeConfirmationProps {
   trade: ParsedTradeMessage;
@@ -43,26 +45,47 @@ export function TradeConfirmation({ trade, onConfirm, onCancel }: TradeConfirmat
         trade.parameters
       );
 
-      // Execute the trade
-      await onConfirm();
-
-      // Update status to completed
-      await statusService.updateExecutionStatus(newExecution.id, 'completed');
-      await statusService.addStatusUpdate(
+      // Execute the trade with retry mechanism
+      const result = await errorService.retryWithBackoff(
         newExecution.id,
-        'success',
-        'Trade executed successfully'
+        async () => {
+          await onConfirm();
+          return true;
+        },
+        {
+          maxAttempts: 3,
+          baseDelay: 2000,
+          maxDelay: 10000,
+          backoffFactor: 2
+        }
       );
+
+      if (result.success) {
+        // Update status to completed
+        await statusService.updateExecutionStatus(newExecution.id, 'completed');
+        await statusService.addStatusUpdate(
+          newExecution.id,
+          'success',
+          'Trade executed successfully'
+        );
+      } else {
+        // Handle final failure
+        await errorService.handleTradeError(
+          newExecution.id,
+          result.error || new Error('Trade execution failed after retries'),
+          {
+            attempts: result.attempts,
+            lastAttemptTime: result.lastAttemptTime,
+            trade: trade.parameters
+          }
+        );
+      }
     } catch (error) {
       if (executionId) {
-        await statusService.updateExecutionStatus(executionId, 'failed', {
-          error: error instanceof Error ? error.message : 'Unknown error'
-        });
-        await statusService.addStatusUpdate(
+        await errorService.handleTradeError(
           executionId,
-          'error',
-          'Trade execution failed',
-          { error: error instanceof Error ? error.message : 'Unknown error' }
+          error instanceof Error ? error : new Error(String(error)),
+          { trade: trade.parameters }
         );
       }
     } finally {
