@@ -1,11 +1,11 @@
 import { supabase } from '@/integrations/supabase/client';
-import { SolanaAuth } from '@crossmint/solana-auth-base';
+import { SolanaAuth, Adapter } from '@crossmint/solana-auth-base';
 import jwt from 'jsonwebtoken';
 
 export const AUTH_DOMAIN = process.env.NEXT_PUBLIC_AUTH_DOMAIN || 'your-domain.com';
 
 // Custom database adapter for Crossmint auth
-const authAdapter = () => ({
+const authAdapter = (): Adapter => ({
   async saveSigninAttempt(attempt: { nonce: string; ttl: number; pubkey: string }) {
     // Store sign-in attempt in your database
     const { data, error } = await supabase
@@ -49,6 +49,11 @@ const authAdapter = () => ({
     
     if (error) throw error;
     return data?.ttl || 300; // 5 minutes default
+  },
+
+  // Required by the Adapter interface
+  async getTLL(pubkey: string) {
+    return this.getTTL(pubkey);
   }
 });
 
