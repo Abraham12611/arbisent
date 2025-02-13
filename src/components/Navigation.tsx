@@ -68,7 +68,7 @@ const Navigation = () => {
                 </>
               ) : (
                 <button
-                  onClick={() => navigate("/auth")}
+                  onClick={() => navigate("/crossmint-auth")}
                   className="bg-arbisent-accent text-arbisent-text px-4 py-2 rounded-md text-sm font-medium hover:bg-opacity-90 transition-colors"
                 >
                   Launch App
