@@ -20,19 +20,19 @@ export default async function handler(
 
   try {
     // Verify the stored nonce matches
-    const storedNonce = await solanaAuth.getNonce(pubkey);
+    const storedNonce = await solanaAuth.adapter.getNonce(pubkey);
     if (storedNonce !== nonce) {
       return res.status(401).json({ error: 'Invalid nonce' });
     }
 
     // Verify the signature
-    const isValid = await solanaAuth.verify(pubkey, signature, nonce);
+    const isValid = await solanaAuth.verifySignature(pubkey, nonce, signature);
     if (!isValid) {
       return res.status(401).json({ error: 'Invalid signature' });
     }
 
     // Generate auth token
-    const token = await solanaAuth.generateToken(pubkey);
+    const token = await solanaAuth.adapter.generateToken(pubkey);
 
     // Create or get existing profile
     const profile = await authDb.createProfile(pubkey);
