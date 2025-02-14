@@ -1,6 +1,11 @@
+import { useState } from "react";
 import { CoinList } from "./price-dashboard/CoinList";
+import { AssetPool } from "./price-dashboard/AssetPool";
+import { Asset } from "@/types/price-dashboard";
 
 export const PriceDashboard = () => {
+  const [currentAssets, setCurrentAssets] = useState<Asset[]>([]);
+
   return (
     <section className="py-20 bg-black/40 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -10,10 +15,11 @@ export const PriceDashboard = () => {
             <span className="text-arbisent-primary"> Overview</span>
           </h2>
           <p className="text-lg text-arbisent-text/80 max-w-2xl mx-auto">
-            Real-time cryptocurrency prices and market data from top exchanges.
+            Real-time cryptocurrency, token, and memecoin prices rotating every 2 minutes.
           </p>
         </div>
-        <CoinList />
+        <AssetPool onAssetsUpdate={setCurrentAssets} />
+        <CoinList assets={currentAssets} />
       </div>
     </section>
   );
