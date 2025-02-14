@@ -52,24 +52,24 @@ const Hero = () => {
           <div className="relative hidden lg:block">
             <div className="absolute inset-0">
               {/* Bitcoin */}
-              <div className="absolute top-0 right-0 w-20 h-20 rounded-full bg-black/40 p-2 backdrop-blur-sm">
-                <img src="/bitcoin.svg" alt="Bitcoin" className="w-full h-full object-contain" />
+              <div className="absolute top-0 right-0 w-20 h-20">
+                <img src="/bitcoin.png" alt="Bitcoin" className="w-full h-full object-contain" />
               </div>
               {/* Ethereum */}
-              <div className="absolute top-1/4 right-1/4 w-16 h-16 rounded-full bg-black/40 p-2 backdrop-blur-sm">
-                <img src="/ethereum.svg" alt="Ethereum" className="w-full h-full object-contain" />
+              <div className="absolute top-1/4 right-1/4 w-16 h-16">
+                <img src="/ethereum.webp" alt="Ethereum" className="w-full h-full object-contain" />
               </div>
               {/* Binance */}
-              <div className="absolute top-1/2 right-0 w-14 h-14 rounded-full bg-black/40 p-2 backdrop-blur-sm">
-                <img src="/binance.svg" alt="Binance" className="w-full h-full object-contain" />
+              <div className="absolute top-1/2 right-0 w-14 h-14">
+                <img src="/binance.webp" alt="Binance" className="w-full h-full object-contain" />
               </div>
               {/* Solana */}
-              <div className="absolute bottom-0 right-1/4 w-18 h-18 rounded-full bg-black/40 p-2 backdrop-blur-sm">
-                <img src="/solana.svg" alt="Solana" className="w-full h-full object-contain" />
+              <div className="absolute bottom-0 right-1/4 w-18 h-18">
+                <img src="/solana.png" alt="Solana" className="w-full h-full object-contain" />
               </div>
               {/* USDT */}
-              <div className="absolute top-1/3 right-1/2 w-16 h-16 rounded-full bg-black/40 p-2 backdrop-blur-sm">
-                <img src="/usdt.svg" alt="USDT" className="w-full h-full object-contain" />
+              <div className="absolute top-1/3 right-1/2 w-16 h-16">
+                <img src="/usdt.webp" alt="USDT" className="w-full h-full object-contain" />
               </div>
             </div>
           </div>
