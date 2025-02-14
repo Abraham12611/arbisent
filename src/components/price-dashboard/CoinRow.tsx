@@ -1,43 +1,62 @@
-import { ArrowDown, ArrowUp } from "lucide-react";
+import { Asset } from "@/types/price-dashboard";
+import { formatNumber, formatPrice } from "@/lib/utils";
 
 interface CoinRowProps {
-  coin: {
-    name: string;
-    symbol: string;
-    price: number;
-    marketCap: number;
-    volume24h: number;
-    priceChange24h: number;
-  };
+  asset: Asset;
 }
 
-export const CoinRow = ({ coin }: CoinRowProps) => {
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(num);
-  };
-
-  const formatPercentage = (num: number) => {
-    return `${num >= 0 ? '+' : ''}${num.toFixed(2)}%`;
-  };
+export const CoinRow = ({ asset }: CoinRowProps) => {
+  const priceChangeClass = asset.priceChange24h >= 0 ? "text-green-500" : "text-red-500";
 
   return (
-    <tr className="border-b border-arbisent-text/10">
-      <td className="px-4 py-4">{coin.name}</td>
-      <td className="px-4 py-4">{coin.symbol.toUpperCase()}</td>
-      <td className="px-4 py-4">{formatNumber(coin.price)}</td>
-      <td className="px-4 py-4">{formatNumber(coin.marketCap)}</td>
-      <td className="px-4 py-4">{formatNumber(coin.volume24h)}</td>
-      <td className="px-4 py-4">
-        <span className={`flex items-center ${coin.priceChange24h >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-          {coin.priceChange24h >= 0 ? <ArrowUp className="w-4 h-4 mr-1" /> : <ArrowDown className="w-4 h-4 mr-1" />}
-          {formatPercentage(coin.priceChange24h)}
+    <tr className="border-b border-arbisent-border hover:bg-arbisent-hover/5">
+      <td className="px-6 py-4 whitespace-nowrap">
+        <div className="flex items-center">
+          <div className="ml-4">
+            <div className="text-sm font-medium text-arbisent-text">{asset.name}</div>
+            <div className="text-sm text-arbisent-text/60">{asset.symbol}</div>
+          </div>
+        </div>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <div className="text-sm text-arbisent-text">{formatPrice(asset.price)}</div>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <div className={`text-sm ${priceChangeClass}`}>
+          {asset.priceChange24h.toFixed(2)}%
+        </div>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-arbisent-text">
+        {formatNumber(asset.marketCap)}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-arbisent-text">
+        {formatNumber(asset.volume24h)}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-arbisent-text">
+        <span className="px-2 py-1 text-xs font-medium rounded-full" 
+              style={{ 
+                backgroundColor: getTypeColor(asset.type),
+                color: '#fff'
+              }}>
+          {asset.type}
         </span>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-arbisent-text/60">
+        {asset.source}
       </td>
     </tr>
   );
+};
+
+const getTypeColor = (type: Asset['type']) => {
+  switch (type) {
+    case 'CRYPTO':
+      return '#2563eb'; // blue
+    case 'TOKEN':
+      return '#7c3aed'; // purple
+    case 'MEMECOIN':
+      return '#db2777'; // pink
+    default:
+      return '#6b7280'; // gray
+  }
 };
