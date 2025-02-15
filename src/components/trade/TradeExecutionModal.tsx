@@ -13,6 +13,7 @@ import { ParsedTradeMessage } from "@/lib/nlu/types";
 import { TradeConfirmation } from "./TradeConfirmation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { TradingPairSelect } from "./TradingPairSelect";
 
 interface TradeExecutionModalProps {
   chatId?: string;
@@ -197,16 +198,10 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
         <Card className="bg-[#151822]/80 border-gray-800">
           <CardContent className="p-4">
             <div className="flex gap-4 mb-4">
-              <Select value={tradingPair} onValueChange={setTradingPair}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Select pair" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="SOL/USDC">SOL/USDC</SelectItem>
-                  <SelectItem value="ETH/USDC">ETH/USDC</SelectItem>
-                  <SelectItem value="BTC/USDC">BTC/USDC</SelectItem>
-                </SelectContent>
-              </Select>
+              <TradingPairSelect
+                value={tradingPair}
+                onValueChange={setTradingPair}
+              />
 
               <Select value={tradeType} onValueChange={setTradeType}>
                 <SelectTrigger className="w-[180px]">
