@@ -14,19 +14,43 @@ interface TradingPair {
 
 export class InchService {
   private static instance: InchService;
-  private readonly API_URL = "https://api.1inch.io/v5.0/1";
+  private readonly API_URL = "https://portal.1inch.dev/api/v5.0/1";
+  private readonly API_KEY = import.meta.env.VITE_1INCH_API_KEY;
   private readonly CACHE_KEY = "inch_trading_pairs";
   private readonly CACHE_DURATION = 1000 * 60 * 60; // 1 hour
   private cachedPairs: TradingPair[] | null = null;
   private lastFetchTime: number = 0;
 
-  private constructor() {}
+  private constructor() {
+    if (!this.API_KEY) {
+      console.warn('1inch API key not found. Please add VITE_1INCH_API_KEY to your environment variables.');
+    }
+  }
 
   static getInstance(): InchService {
     if (!InchService.instance) {
       InchService.instance = new InchService();
     }
     return InchService.instance;
+  }
+
+  private async fetchWithAuth(endpoint: string) {
+    const response = await fetch(`${this.API_URL}${endpoint}`, {
+      headers: {
+        'Authorization': `Bearer ${this.API_KEY}`,
+        'Accept': 'application/json',
+      }
+    });
+
+    if (response.status === 401) {
+      throw new Error('Invalid or missing 1inch API key');
+    }
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.statusText}`);
+    }
+
+    return response.json();
   }
 
   async getTradingPairs(): Promise<TradingPair[]> {
@@ -40,21 +64,11 @@ export class InchService {
       console.log("Fetching trading pairs from 1inch API");
       
       // Fetch tokens
-      const tokensResponse = await fetch(`${this.API_URL}/tokens`);
-      if (!tokensResponse.ok) {
-        throw new Error(`Failed to fetch tokens: ${tokensResponse.statusText}`);
-      }
-      
-      const tokensData = await tokensResponse.json();
+      const tokensData = await this.fetchWithAuth('/tokens');
       const tokens = Object.values(tokensData.tokens) as Token[];
 
-      // Get liquidity sources to determine valid pairs
-      const liquidityResponse = await fetch(`${this.API_URL}/liquidity-sources`);
-      if (!liquidityResponse.ok) {
-        throw new Error(`Failed to fetch liquidity sources: ${liquidityResponse.statusText}`);
-      }
-      
-      const liquidityData = await liquidityResponse.json();
+      // Get liquidity sources
+      const liquidityData = await this.fetchWithAuth('/liquidity-sources');
       const liquiditySources = liquidityData.protocols;
 
       // Create trading pairs
