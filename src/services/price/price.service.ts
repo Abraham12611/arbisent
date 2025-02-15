@@ -10,7 +10,7 @@ export class PriceService {
   private cache: Map<string, Asset> = new Map();
   private cacheTimeout = 30000; // 30 seconds
 
-  constructor(private config: PriceServiceConfig) {
+  constructor(private config: Partial<PriceServiceConfig> = {}) {
     // Validate config
     if (!config.coingeckoApiKey) {
       console.warn('CoinGecko API key is missing');
@@ -25,6 +25,10 @@ export class PriceService {
 
   registerService(service: BasePriceService) {
     this.services.push(service);
+  }
+
+  getServiceCount(): number {
+    return this.services.length;
   }
 
   async getAssets(types: AssetType[]): Promise<Asset[]> {

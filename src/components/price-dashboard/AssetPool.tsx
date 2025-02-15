@@ -27,29 +27,47 @@ export const AssetPool = ({ onAssetsUpdate, onLoadingChange }: AssetPoolProps) =
   }, [isLoading, onLoadingChange]);
 
   useEffect(() => {
-    // Validate environment variables
-    const coingeckoApiKey = import.meta.env.VITE_COINGECKO_API_KEY;
-    const cmcApiKey = import.meta.env.VITE_CMC_API_KEY;
-    const etherscanApiKey = import.meta.env.VITE_ETHERSCAN_API_KEY;
+    const priceService = new PriceService({});
 
-    if (!coingeckoApiKey || !cmcApiKey || !etherscanApiKey) {
-      const errorMsg = 'Missing required API keys. Please check your environment variables.';
+    // Try to register CoinGecko service (required)
+    const coingeckoApiKey = import.meta.env.VITE_COINGECKO_API_KEY;
+    if (coingeckoApiKey) {
+      try {
+        priceService.registerService(new CoinGeckoService(coingeckoApiKey));
+      } catch (error) {
+        console.error('Failed to initialize CoinGecko service:', error);
+        toast.error('Failed to initialize CoinGecko service');
+      }
+    }
+
+    // Try to register CMC service (optional)
+    const cmcApiKey = import.meta.env.VITE_CMC_API_KEY;
+    if (cmcApiKey) {
+      try {
+        priceService.registerService(new CMCService(cmcApiKey));
+      } catch (error) {
+        console.error('Failed to initialize CMC service:', error);
+      }
+    }
+
+    // Try to register DEX service (optional)
+    const etherscanApiKey = import.meta.env.VITE_ETHERSCAN_API_KEY;
+    if (etherscanApiKey) {
+      try {
+        priceService.registerService(new DexPriceService(etherscanApiKey));
+      } catch (error) {
+        console.error('Failed to initialize DEX service:', error);
+      }
+    }
+
+    // Check if at least one service is registered
+    if (priceService.getServiceCount() === 0) {
+      const errorMsg = 'No price services could be initialized. Please check your API keys.';
       setError(errorMsg);
       toast.error(errorMsg);
       setIsLoading(false);
       return;
     }
-
-    const priceService = new PriceService({
-      coingeckoApiKey,
-      cmcApiKey,
-      etherscanApiKey,
-    });
-
-    // Register all services
-    priceService.registerService(new CoinGeckoService(coingeckoApiKey));
-    priceService.registerService(new CMCService(cmcApiKey));
-    priceService.registerService(new DexPriceService(etherscanApiKey));
 
     const fetchAssets = async () => {
       setIsLoading(true);

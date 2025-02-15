@@ -4,7 +4,7 @@ import { BasePriceService } from "./price.service";
 export class CoinGeckoService extends BasePriceService {
   private readonly API_URL = "https://api.coingecko.com/api/v3";
   private lastCallTime: number = 0;
-  private readonly RATE_LIMIT_DELAY = 2000; // 2 seconds between calls for public API
+  private readonly RATE_LIMIT_DELAY = 10000; // 10 seconds between calls for public API
   private readonly MAX_RETRIES = 3;
   
   constructor(private apiKey: string) {
@@ -32,21 +32,28 @@ export class CoinGeckoService extends BasePriceService {
     }
     
     try {
-      console.log(`Making CoinGecko API call (attempt ${retryCount + 1}/${this.MAX_RETRIES + 1}):`, url);
+      console.log(`Making CoinGecko API call (attempt ${retryCount + 1}/${this.MAX_RETRIES + 1})`);
       this.lastCallTime = Date.now();
-      const response = await fetch(url, {
-        headers: {
-          'x-cg-demo-api-key': this.apiKey,
-          'Accept': 'application/json'
-        }
-      });
+
+      // First try without API key (public API)
+      let response = await fetch(`${url}`);
+      
+      // If we get rate limited, try with API key
+      if (response.status === 429) {
+        console.log('Rate limited on public API, retrying with API key...');
+        response = await fetch(`${url}${url.includes('?') ? '&' : '?'}x_cg_demo_api_key=${this.apiKey}`, {
+          headers: {
+            'x-cg-demo-api-key': this.apiKey
+          }
+        });
+      }
 
       console.log('CoinGecko API response status:', response.status);
 
-      // Handle rate limiting
+      // Handle rate limiting with API key
       if (response.status === 429 && retryCount < this.MAX_RETRIES) {
-        const retryAfter = parseInt(response.headers.get('retry-after') || '5');
-        console.log(`Rate limited. Retrying after ${retryAfter} seconds`);
+        const retryAfter = parseInt(response.headers.get('retry-after') || '10');
+        console.log(`Still rate limited. Retrying after ${retryAfter} seconds`);
         await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
         return this.rateLimitedFetch(url, retryCount + 1);
       }
@@ -67,7 +74,7 @@ export class CoinGeckoService extends BasePriceService {
     try {
       console.log('Fetching assets from CoinGecko...');
       const response = await this.rateLimitedFetch(
-        `${this.API_URL}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&sparkline=false&price_change_percentage=24h&x_cg_demo_api_key=${this.apiKey}`
+        `${this.API_URL}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&sparkline=false&price_change_percentage=24h`
       );
 
       if (!response.ok) {
