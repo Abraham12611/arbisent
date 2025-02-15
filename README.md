@@ -1,69 +1,55 @@
-# Welcome to your Lovable project
+I'll help you create a comprehensive README.md that better reflects ArbiSent's technical capabilities. Here's the updated version:
 
-## Project info
+```markdown
+# ArbiSent - AI-Powered Crypto Arbitrage Platform
 
-**URL**: https://lovable.dev/projects/52cf5833-d534-45a1-be12-28ae362f81cd
+![ArbiSent Header](https://raw.githubusercontent.com/abraham12611/arbisent/main/public/arbisent-hero.png)
 
-## How can I edit this code?
+## Overview
 
-There are several ways of editing your application.
+ArbiSent is a sophisticated AI-powered arbitrage platform that leverages multiple intelligent agents to identify and execute profitable trading opportunities across decentralized exchanges (DEXs).
 
-**Use Lovable**
+## Technical Architecture
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/52cf5833-d534-45a1-be12-28ae362f81cd) and start prompting.
+### Agent System
 
-Changes made via Lovable will be committed automatically to this repo.
+ArbiSent employs a multi-agent system orchestrated through LangChain's StateGraph
 
-**Use your preferred IDE**
+The platform consists of five specialized agents:
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+1. **Data Collection Agent**: Continuously fetches market data and sentiment analysis through the Cookie DataSwarm API
+2. **Research Agent**: Processes market data using LangChain's vector embeddings and RAG (Retrieval Augmented Generation)
+3. **Strategy Agent**: Generates trading strategies using custom-tuned GPT-4 models
+4. **Risk Management Agent**: Evaluates trade risks and sets appropriate parameters
+5. **Execution Agent**: Interfaces with DEXs through Solana Agent Kit for trade execution
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Core Features
 
-Follow these steps:
+- **Natural Language Processing**: Processes trading intents through a custom NLU pipeline
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- **Real-time Market Analysis**: Implements sophisticated market analysis through the MarketAnalysisService
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
-npm i
+- **Automated Strategy Generation**: Utilizes LLM-powered strategy generation with strict JSON formatting
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+### System Architecture
 
-**Edit a file directly in GitHub**
+![ArbiSent System Architecture](https://raw.githubusercontent.com/abraham12611/arbisent/main/public/diagram.png)
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Technology Stack
 
-**Use GitHub Codespaces**
+- **Frontend**: React, TypeScript, shadcn-ui, Tailwind CSS
+- **Backend**: Supabase, Serverless Functions
+- **AI/ML**: LangChain, OpenAI GPT-4, Vector Embeddings
+- **Blockchain**: Mantle Network, Solana Web3.js, Multiple DEX Integrations
+- **Data Processing**: Cookie DataSwarm API, Firecrawl API
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
 
-## What technologies are used for this project?
+## API Integration
 
-This project is built with .
+ArbiSent integrates with multiple APIs:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/52cf5833-d534-45a1-be12-28ae362f81cd) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+- OpenAI for strategy generation
+- Cookie DataSwarm for market sentiment
+- Firecrawl for web scraping
+- Multiple DEX APIs for price discovery and execution
