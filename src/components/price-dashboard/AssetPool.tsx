@@ -7,6 +7,7 @@ import { DexPriceService } from "@/services/price/dex.service";
 
 const ROTATION_INTERVAL = 120000; // 2 minutes in milliseconds
 const ASSETS_PER_TYPE = 3; // Number of assets to show per type
+const RETRY_DELAY = 5000; // 5 seconds before retrying failed requests
 
 interface AssetPoolProps {
   onAssetsUpdate: (assets: Asset[]) => void;
@@ -15,31 +16,61 @@ interface AssetPoolProps {
 export const AssetPool = ({ onAssetsUpdate }: AssetPoolProps) => {
   const [allAssets, setAllAssets] = useState<Asset[]>([]);
   const [displayedAssets, setDisplayedAssets] = useState<Asset[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Validate environment variables
+    const coingeckoApiKey = import.meta.env.VITE_COINGECKO_API_KEY;
+    const cmcApiKey = import.meta.env.VITE_CMC_API_KEY;
+    const etherscanApiKey = import.meta.env.VITE_ETHERSCAN_API_KEY;
+
+    if (!coingeckoApiKey || !cmcApiKey || !etherscanApiKey) {
+      setError('Missing required API keys. Please check your environment variables.');
+      setIsLoading(false);
+      return;
+    }
+
     const priceService = new PriceService({
-      coingeckoApiKey: import.meta.env.VITE_COINGECKO_API_KEY,
-      cmcApiKey: import.meta.env.VITE_CMC_API_KEY,
-      etherscanApiKey: import.meta.env.VITE_ETHERSCAN_API_KEY,
+      coingeckoApiKey,
+      cmcApiKey,
+      etherscanApiKey,
     });
 
     // Register all services
-    priceService.registerService(new CoinGeckoService(import.meta.env.VITE_COINGECKO_API_KEY));
-    priceService.registerService(new CMCService(import.meta.env.VITE_CMC_API_KEY));
-    priceService.registerService(new DexPriceService(import.meta.env.VITE_ETHERSCAN_API_KEY));
+    priceService.registerService(new CoinGeckoService(coingeckoApiKey));
+    priceService.registerService(new CMCService(cmcApiKey));
+    priceService.registerService(new DexPriceService(etherscanApiKey));
 
     const fetchAssets = async () => {
+      setIsLoading(true);
+      setError(null);
+      
       try {
         const assets = await priceService.getAssets([
           AssetType.CRYPTO,
           AssetType.TOKEN,
           AssetType.MEMECOIN,
         ]);
+
+        if (assets.length === 0) {
+          throw new Error('No assets returned from any service');
+        }
+
         setAllAssets(assets);
         rotateAssets(assets);
+        setError(null);
       } catch (error) {
-        console.error("Failed to fetch assets:", error);
-        // Keep the existing assets if there's an error
+        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch assets';
+        console.error(errorMessage, error);
+        setError(errorMessage);
+        
+        // Retry after delay if we have no assets
+        if (allAssets.length === 0) {
+          setTimeout(fetchAssets, RETRY_DELAY);
+        }
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -80,6 +111,6 @@ export const AssetPool = ({ onAssetsUpdate }: AssetPoolProps) => {
     setDisplayedAssets(selectedAssets);
   };
 
-  // Component doesn't render anything directly
+  // Return loading state for parent component
   return null;
 }; 
