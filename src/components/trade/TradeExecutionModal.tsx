@@ -30,11 +30,13 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const { 
     processMessage, 
+    processTradeMessage,
     isProcessing, 
     lastParsedMessage, 
     errors,
     isEthereumConnected,
-    isSolanaConnected
+    isSolanaConnected,
+    confirmTrade
   } = useTradeNLU();
 
   useEffect(() => {
@@ -81,16 +83,16 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
 
   const handleSubmit = async () => {
     if (!prompt.trim()) {
-      toast.error("Please enter a trade description");
+      toast.error("Please enter a message");
       return;
     }
 
     try {
       setIsLoading(true);
       
-      // Process message through NLU
-      const parsedMessage = await processMessage(prompt);
-      if (!parsedMessage) {
+      // Process the message
+      const messageResult = await processMessage(prompt);
+      if (!messageResult) {
         // Display validation errors if any
         if (errors.length > 0) {
           errors.forEach(error => toast.error(error));
@@ -98,12 +100,20 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
         return;
       }
 
-      // Show trade confirmation
-      setShowConfirmation(true);
+      // Handle different message types
+      if (messageResult.type === 'trade') {
+        setShowConfirmation(true);
+      } else if (messageResult.type === 'arbitrage') {
+        // Arbitrage results are automatically displayed in chat
+        setPrompt("");
+      } else {
+        // For general messages, just clear the input
+        setPrompt("");
+      }
       
     } catch (error: any) {
-      console.error('Error processing trade:', error);
-      toast.error(error.message || "Failed to process trade");
+      console.error('Error processing message:', error);
+      toast.error(error.message || "Failed to process message");
     } finally {
       setIsLoading(false);
     }

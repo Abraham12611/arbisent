@@ -117,65 +117,10 @@ export function useTradeNLU() {
   // Check if Solana wallet is properly connected
   const isSolanaConnected = Boolean(connected && publicKey) || Boolean(storedWallets.phantom?.address);
   
-  // Log connection state changes
-  useEffect(() => {
-    console.log('Solana Connection State:', {
-      connected,
-      publicKey: publicKey?.toString(),
-      storedPhantomAddress: storedWallets.phantom?.address,
-      isSolanaConnected
-    });
-  }, [connected, publicKey, storedWallets, isSolanaConnected]);
-  
   // Initialize arbitrage service with provider
   const arbitrageService = provider ? new ArbitrageService(provider) : null;
 
-  const processMessage = useCallback(async (input: string) => {
-    // Allow message processing without wallet connection
-    const lowerInput = input.toLowerCase();
-    const newMessage: Message = {
-      id: crypto.randomUUID(),
-      type: 'text',
-      content: input,
-      timestamp: Date.now(),
-    };
-
-    try {
-      // Check for arbitrage scanning request
-      if (lowerInput.includes('arbitrage') || 
-          (lowerInput.includes('search') && lowerInput.includes('opportunities'))) {
-        
-        // Only require wallet connection for arbitrage operations
-        if (!isSolanaConnected) {
-          toast.error('Please connect your Solana wallet for arbitrage operations');
-          return null;
-        }
-
-        if (!provider) {
-          toast.error('Please connect your Ethereum wallet for arbitrage operations');
-          return null;
-        }
-
-        if (!arbitrageService) {
-          toast.error('Arbitrage service not initialized');
-          return null;
-        }
-
-        newMessage.type = 'arbitrage';
-        const pair = extractTradingPair(lowerInput) || 'ETH/USDT';
-        const opportunities = await arbitrageService.scanForOpportunities(pair);
-        newMessage.data = { opportunities, pair };
-      }
-
-      setMessages(prev => [...prev, newMessage]);
-      return newMessage;
-    } catch (error) {
-      console.error('Error processing message:', error);
-      toast.error('Failed to process message');
-      return null;
-    }
-  }, [isSolanaConnected, provider, arbitrageService]);
-
+  // Define processTradeMessage first since it's used in processMessage
   const processTradeMessage = async (message: string): Promise<ParsedTradeMessage | null> => {
     try {
       setIsProcessing(true);
@@ -183,8 +128,13 @@ export function useTradeNLU() {
 
       const result: NLUResult = parseTradeMessage(message);
 
+      // If it's not a trade message, don't treat it as an error
+      if (!result.success && !message.toLowerCase().includes('trade')) {
+        return null;
+      }
+
       if (!result.success || !result.parsed) {
-        setErrors([result.error || 'Failed to parse message']);
+        setErrors([result.error || 'Could not determine trade intent']);
         return null;
       }
 
@@ -203,6 +153,61 @@ export function useTradeNLU() {
       setIsProcessing(false);
     }
   };
+
+  const processMessage = useCallback(async (input: string) => {
+    const lowerInput = input.toLowerCase();
+    const newMessage: Message = {
+      id: crypto.randomUUID(),
+      type: 'text',
+      content: input,
+      timestamp: Date.now(),
+    };
+
+    try {
+      // Check for arbitrage-related queries
+      if (
+        lowerInput.includes('arbitrage') || 
+        lowerInput.includes('find opportunities') ||
+        (lowerInput.includes('search') && lowerInput.includes('opportunities'))
+      ) {
+        // Only require wallet connection for actual trading, not for searching
+        newMessage.type = 'arbitrage';
+        const pair = extractTradingPair(lowerInput) || 'ETH/USDT';
+        
+        try {
+          const opportunities = await arbitrageService?.scanForOpportunities(pair) || [];
+          newMessage.data = { opportunities, pair };
+          setMessages(prev => [...prev, newMessage]);
+          return newMessage;
+        } catch (error) {
+          console.error('Error scanning for opportunities:', error);
+          toast.error('Failed to scan for arbitrage opportunities');
+          return null;
+        }
+      }
+
+      // For trade execution commands
+      if (
+        lowerInput.includes('buy') || 
+        lowerInput.includes('sell') || 
+        lowerInput.includes('trade')
+      ) {
+        const parsedTrade = await processTradeMessage(input);
+        if (!parsedTrade) return null;
+        
+        newMessage.type = 'trade';
+        newMessage.data = { parsedTrade };
+      }
+
+      // For general queries, just return the message
+      setMessages(prev => [...prev, newMessage]);
+      return newMessage;
+    } catch (error) {
+      console.error('Error processing message:', error);
+      toast.error('Failed to process message');
+      return null;
+    }
+  }, [arbitrageService]);
 
   const confirmTrade = async () => {
     if (!isSolanaConnected) {
