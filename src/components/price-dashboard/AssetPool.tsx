@@ -4,6 +4,7 @@ import { PriceService } from "@/services/price/price.service";
 import { CoinGeckoService } from "@/services/price/coingecko.service";
 import { CMCService } from "@/services/price/cmc.service";
 import { DexPriceService } from "@/services/price/dex.service";
+import { toast } from "sonner";
 
 const ROTATION_INTERVAL = 120000; // 2 minutes in milliseconds
 const ASSETS_PER_TYPE = 3; // Number of assets to show per type
@@ -11,13 +12,19 @@ const RETRY_DELAY = 5000; // 5 seconds before retrying failed requests
 
 interface AssetPoolProps {
   onAssetsUpdate: (assets: Asset[]) => void;
+  onLoadingChange?: (isLoading: boolean) => void;
 }
 
-export const AssetPool = ({ onAssetsUpdate }: AssetPoolProps) => {
+export const AssetPool = ({ onAssetsUpdate, onLoadingChange }: AssetPoolProps) => {
   const [allAssets, setAllAssets] = useState<Asset[]>([]);
   const [displayedAssets, setDisplayedAssets] = useState<Asset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Notify parent of loading state changes
+  useEffect(() => {
+    onLoadingChange?.(isLoading);
+  }, [isLoading, onLoadingChange]);
 
   useEffect(() => {
     // Validate environment variables
@@ -26,7 +33,9 @@ export const AssetPool = ({ onAssetsUpdate }: AssetPoolProps) => {
     const etherscanApiKey = import.meta.env.VITE_ETHERSCAN_API_KEY;
 
     if (!coingeckoApiKey || !cmcApiKey || !etherscanApiKey) {
-      setError('Missing required API keys. Please check your environment variables.');
+      const errorMsg = 'Missing required API keys. Please check your environment variables.';
+      setError(errorMsg);
+      toast.error(errorMsg);
       setIsLoading(false);
       return;
     }
@@ -47,11 +56,14 @@ export const AssetPool = ({ onAssetsUpdate }: AssetPoolProps) => {
       setError(null);
       
       try {
+        console.log('Fetching assets...'); // Debug log
         const assets = await priceService.getAssets([
           AssetType.CRYPTO,
           AssetType.TOKEN,
           AssetType.MEMECOIN,
         ]);
+
+        console.log('Fetched assets:', assets); // Debug log
 
         if (assets.length === 0) {
           throw new Error('No assets returned from any service');
@@ -64,6 +76,7 @@ export const AssetPool = ({ onAssetsUpdate }: AssetPoolProps) => {
         const errorMessage = error instanceof Error ? error.message : 'Failed to fetch assets';
         console.error(errorMessage, error);
         setError(errorMessage);
+        toast.error(errorMessage);
         
         // Retry after delay if we have no assets
         if (allAssets.length === 0) {
@@ -111,6 +124,5 @@ export const AssetPool = ({ onAssetsUpdate }: AssetPoolProps) => {
     setDisplayedAssets(selectedAssets);
   };
 
-  // Return loading state for parent component
-  return null;
+  return null; // Component doesn't render anything directly
 }; 

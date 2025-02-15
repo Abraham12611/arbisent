@@ -12,6 +12,7 @@ export class CoinGeckoService extends BasePriceService {
     if (!apiKey) {
       throw new Error('CoinGecko API key is required');
     }
+    console.log('CoinGecko service initialized with API key:', apiKey.substring(0, 5) + '...');
   }
 
   getName(): string {
@@ -23,12 +24,15 @@ export class CoinGeckoService extends BasePriceService {
     const timeSinceLastCall = now - this.lastCallTime;
     
     if (timeSinceLastCall < this.RATE_LIMIT_DELAY) {
+      const waitTime = this.RATE_LIMIT_DELAY - timeSinceLastCall;
+      console.log(`Rate limiting: waiting ${waitTime}ms before next call`);
       await new Promise(resolve => 
-        setTimeout(resolve, this.RATE_LIMIT_DELAY - timeSinceLastCall)
+        setTimeout(resolve, waitTime)
       );
     }
     
     try {
+      console.log(`Making CoinGecko API call (attempt ${retryCount + 1}/${this.MAX_RETRIES + 1}):`, url);
       this.lastCallTime = Date.now();
       const response = await fetch(url, {
         headers: {
@@ -37,16 +41,21 @@ export class CoinGeckoService extends BasePriceService {
         }
       });
 
+      console.log('CoinGecko API response status:', response.status);
+
       // Handle rate limiting
       if (response.status === 429 && retryCount < this.MAX_RETRIES) {
         const retryAfter = parseInt(response.headers.get('retry-after') || '5');
+        console.log(`Rate limited. Retrying after ${retryAfter} seconds`);
         await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
         return this.rateLimitedFetch(url, retryCount + 1);
       }
 
       return response;
     } catch (error) {
+      console.error('CoinGecko API fetch error:', error);
       if (retryCount < this.MAX_RETRIES) {
+        console.log('Retrying after error...');
         await new Promise(resolve => setTimeout(resolve, 2000));
         return this.rateLimitedFetch(url, retryCount + 1);
       }
@@ -56,18 +65,22 @@ export class CoinGeckoService extends BasePriceService {
 
   async getAssets(types: AssetType[]): Promise<Asset[]> {
     try {
+      console.log('Fetching assets from CoinGecko...');
       const response = await this.rateLimitedFetch(
         `${this.API_URL}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&sparkline=false&price_change_percentage=24h&x_cg_demo_api_key=${this.apiKey}`
       );
 
       if (!response.ok) {
         const errorText = await response.text();
+        console.error('CoinGecko API error response:', errorText);
         throw new Error(`Failed to fetch from CoinGecko: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
+      console.log(`Successfully fetched ${data.length} assets from CoinGecko`);
       
       if (!Array.isArray(data)) {
+        console.error('Invalid response format:', data);
         throw new Error('Invalid response format from CoinGecko');
       }
 

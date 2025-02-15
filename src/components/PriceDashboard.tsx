@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { CoinList } from "./price-dashboard/CoinList";
 import { AssetPool } from "./price-dashboard/AssetPool";
+import { LoadingSpinner } from "./price-dashboard/LoadingSpinner";
 import { Asset } from "@/types/price-dashboard";
+import { toast } from "sonner";
 
 export const PriceDashboard = () => {
   const [currentAssets, setCurrentAssets] = useState<Asset[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   return (
     <section className="py-20 bg-black/40 backdrop-blur-sm">
@@ -15,11 +18,22 @@ export const PriceDashboard = () => {
             <span className="text-arbisent-primary"> Overview</span>
           </h2>
           <p className="text-lg text-arbisent-text/80 max-w-2xl mx-auto">
-            Real-time cryptocurrency, token, and memecoin prices rotating every 2 minutes.
+            Real-time cryptocurrency, token, and memecoin prices.
           </p>
         </div>
-        <AssetPool onAssetsUpdate={setCurrentAssets} />
-        <CoinList assets={currentAssets} />
+
+        <AssetPool 
+          onAssetsUpdate={setCurrentAssets} 
+          onLoadingChange={setIsLoading}
+        />
+
+        {isLoading && currentAssets.length === 0 ? (
+          <div className="flex justify-center items-center min-h-[200px]">
+            <LoadingSpinner />
+          </div>
+        ) : (
+          <CoinList assets={currentAssets} />
+        )}
       </div>
     </section>
   );
