@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatPrice } from "@/lib/utils";
 import { PositionControls } from "./PositionControls";
+import { RiskIndicator } from "./RiskIndicator";
 
 interface Position {
   id: string;
@@ -31,9 +32,10 @@ interface PositionTableProps {
   positions: Position[];
   isLoading: boolean;
   onPositionClose: (id: string) => void;
+  portfolioValue: number;
 }
 
-export function PositionTable({ positions, isLoading, onPositionClose }: PositionTableProps) {
+export function PositionTable({ positions, isLoading, onPositionClose, portfolioValue }: PositionTableProps) {
   const [expandedPosition, setExpandedPosition] = useState<string | null>(null);
 
   const handleClosePosition = async (positionId: string) => {
@@ -76,6 +78,7 @@ export function PositionTable({ positions, isLoading, onPositionClose }: Positio
             <TableHead>P/L</TableHead>
             <TableHead>Stop Loss</TableHead>
             <TableHead>Take Profit</TableHead>
+            <TableHead>Risk</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -103,6 +106,9 @@ export function PositionTable({ positions, isLoading, onPositionClose }: Positio
                   {position.take_profit ? formatPrice(position.take_profit) : '-'}
                 </TableCell>
                 <TableCell>
+                  <RiskIndicator position={position} portfolioValue={portfolioValue} />
+                </TableCell>
+                <TableCell>
                   <div className="flex gap-2">
                     <Button 
                       variant="ghost" 
@@ -123,7 +129,7 @@ export function PositionTable({ positions, isLoading, onPositionClose }: Positio
               </TableRow>
               {expandedPosition === position.id && (
                 <TableRow>
-                  <TableCell colSpan={10} className="p-0">
+                  <TableCell colSpan={11} className="p-0">
                     <PositionControls
                       positionId={position.id}
                       symbol={position.symbol}
@@ -139,7 +145,7 @@ export function PositionTable({ positions, isLoading, onPositionClose }: Positio
           ))}
           {positions.length === 0 && (
             <TableRow>
-              <TableCell colSpan={10} className="text-center">
+              <TableCell colSpan={11} className="text-center">
                 No active positions
               </TableCell>
             </TableRow>

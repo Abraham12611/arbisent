@@ -146,6 +146,7 @@ export function ActivePositionsView() {
           <PositionTable 
             positions={positions}
             isLoading={isLoading}
+            portfolioValue={totalValue}
             onPositionClose={(id) => {
               setPositions(prev => prev.filter(p => p.id !== id));
               toast.success("Position closed successfully");
