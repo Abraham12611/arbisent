@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, RefreshCw } from "lucide-react";
+import { MarketAnalysisService } from "@/services/analysis/market-analysis.service";
 
 interface MarketAnalysisModalProps {
   isOpen: boolean;
@@ -14,6 +15,53 @@ interface AnalysisMessage {
 
 export const MarketAnalysisModal = ({ isOpen, onClose }: MarketAnalysisModalProps) => {
   const [messages, setMessages] = useState<AnalysisMessage[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const analysisService = new MarketAnalysisService();
+
+  const performAnalysis = async () => {
+    if (isAnalyzing) return;
+
+    setIsAnalyzing(true);
+    setMessages(prev => [
+      ...prev,
+      {
+        type: 'loading',
+        content: 'Analyzing market conditions...',
+        timestamp: new Date()
+      }
+    ]);
+
+    try {
+      const insights = await analysisService.analyzeMarket();
+      
+      setMessages(prev => [
+        ...prev.filter(m => m.type !== 'loading'), // Remove loading message
+        ...insights.map(content => ({
+          type: 'analysis' as const,
+          content,
+          timestamp: new Date()
+        }))
+      ]);
+    } catch (error) {
+      setMessages(prev => [
+        ...prev.filter(m => m.type !== 'loading'),
+        {
+          type: 'error',
+          content: 'Failed to analyze market. Please try again.',
+          timestamp: new Date()
+        }
+      ]);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // Start analysis when modal opens
+  useEffect(() => {
+    if (isOpen && messages.length === 0) {
+      performAnalysis();
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -45,6 +93,8 @@ export const MarketAnalysisModal = ({ isOpen, onClose }: MarketAnalysisModalProp
                   className={`p-4 rounded-lg ${
                     message.type === 'error'
                       ? 'bg-red-500/10 border border-red-500/20'
+                      : message.type === 'loading'
+                      ? 'bg-blue-500/10 border border-blue-500/20'
                       : 'bg-arbisent-background-light'
                   }`}
                 >
@@ -61,10 +111,21 @@ export const MarketAnalysisModal = ({ isOpen, onClose }: MarketAnalysisModalProp
         {/* Footer */}
         <div className="p-4 border-t border-arbisent-border">
           <button
-            onClick={() => {/* TODO: Implement refresh */}}
-            className="w-full px-4 py-2 bg-arbisent-primary text-arbisent-text rounded-lg hover:bg-opacity-90 transition-colors"
+            onClick={performAnalysis}
+            disabled={isAnalyzing}
+            className="w-full px-4 py-2 bg-arbisent-primary text-arbisent-text rounded-lg hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Refresh Analysis
+            {isAnalyzing ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4" />
+                Refresh Analysis
+              </>
+            )}
           </button>
         </div>
       </div>
