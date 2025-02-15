@@ -52,7 +52,7 @@ const Hero = () => {
           <div className="relative hidden lg:block">
             <div className="absolute inset-0">
               {/* Bitcoin */}
-              <div className="absolute top-0 right-0 w-20 h-20">
+              <div className="absolute top-0 right-12 w-20 h-20">
                 <img src="/bitcoin.png" alt="Bitcoin" className="w-full h-full object-contain" />
               </div>
               {/* Ethereum */}
@@ -60,7 +60,7 @@ const Hero = () => {
                 <img src="/ethereum.webp" alt="Ethereum" className="w-full h-full object-contain" />
               </div>
               {/* Binance */}
-              <div className="absolute top-1/2 right-0 w-24 h-24">
+              <div className="absolute top-1/2 right-20 w-16 h-16">
                 <img src="/binance.webp" alt="Binance" className="w-full h-full object-contain" />
               </div>
               {/* Solana */}
@@ -68,7 +68,7 @@ const Hero = () => {
                 <img src="/solana.png" alt="Solana" className="w-full h-full object-contain" />
               </div>
               {/* USDT */}
-              <div className="absolute top-1/2 right-1/4 w-16 h-16">
+              <div className="absolute top-1/3 right-6 w-16 h-16">
                 <img src="/usdt.webp" alt="USDT" className="w-full h-full object-contain" />
               </div>
             </div>
