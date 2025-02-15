@@ -26,7 +26,7 @@ export const MarketAnalysisModal = ({ isOpen, onClose }: MarketAnalysisModalProp
       ...prev,
       {
         type: 'loading',
-        content: 'Analyzing market conditions...',
+        content: '🔄 Analyzing market conditions...',
         timestamp: new Date()
       }
     ]);
@@ -35,7 +35,7 @@ export const MarketAnalysisModal = ({ isOpen, onClose }: MarketAnalysisModalProp
       const insights = await analysisService.analyzeMarket();
       
       setMessages(prev => [
-        ...prev.filter(m => m.type !== 'loading'), // Remove loading message
+        ...prev.filter(m => m.type !== 'loading'),
         ...insights.map(content => ({
           type: 'analysis' as const,
           content,
@@ -47,7 +47,7 @@ export const MarketAnalysisModal = ({ isOpen, onClose }: MarketAnalysisModalProp
         ...prev.filter(m => m.type !== 'loading'),
         {
           type: 'error',
-          content: 'Failed to analyze market. Please try again.',
+          content: '❌ Failed to analyze market. Please try again.',
           timestamp: new Date()
         }
       ]);
@@ -67,7 +67,7 @@ export const MarketAnalysisModal = ({ isOpen, onClose }: MarketAnalysisModalProp
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-      <div className="bg-[#151822] border border-arbisent-border rounded-lg w-full max-w-2xl max-h-[80vh] overflow-hidden">
+      <div className="bg-[#151822] border border-arbisent-border rounded-lg w-full max-w-3xl max-h-[80vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-arbisent-border">
           <h2 className="text-lg font-semibold text-arbisent-text">Market Analysis</h2>
@@ -83,7 +83,7 @@ export const MarketAnalysisModal = ({ isOpen, onClose }: MarketAnalysisModalProp
         <div className="p-4 h-[60vh] overflow-y-auto">
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-arbisent-text/60">
-              Initializing market analysis...
+              🔄 Initializing market analysis...
             </div>
           ) : (
             <div className="space-y-4">
@@ -98,7 +98,9 @@ export const MarketAnalysisModal = ({ isOpen, onClose }: MarketAnalysisModalProp
                       : 'bg-arbisent-background-light'
                   }`}
                 >
-                  <div className="text-sm text-arbisent-text">{message.content}</div>
+                  <pre className="text-sm text-arbisent-text whitespace-pre-wrap font-sans">
+                    {message.content}
+                  </pre>
                   <div className="text-xs text-arbisent-text/60 mt-2">
                     {message.timestamp.toLocaleTimeString()}
                   </div>
