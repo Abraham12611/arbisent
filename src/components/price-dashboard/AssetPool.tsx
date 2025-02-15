@@ -29,15 +29,13 @@ export const AssetPool = ({ onAssetsUpdate, onLoadingChange }: AssetPoolProps) =
   useEffect(() => {
     const priceService = new PriceService({});
 
-    // Try to register CoinGecko service (required)
+    // Register CoinGecko service (works with or without API key)
     const coingeckoApiKey = import.meta.env.VITE_COINGECKO_API_KEY;
-    if (coingeckoApiKey) {
-      try {
-        priceService.registerService(new CoinGeckoService(coingeckoApiKey));
-      } catch (error) {
-        console.error('Failed to initialize CoinGecko service:', error);
-        toast.error('Failed to initialize CoinGecko service');
-      }
+    try {
+      priceService.registerService(new CoinGeckoService(coingeckoApiKey));
+    } catch (error) {
+      console.error('Failed to initialize CoinGecko service:', error);
+      toast.error('Failed to initialize CoinGecko service');
     }
 
     // Try to register CMC service (optional)
@@ -62,7 +60,7 @@ export const AssetPool = ({ onAssetsUpdate, onLoadingChange }: AssetPoolProps) =
 
     // Check if at least one service is registered
     if (priceService.getServiceCount() === 0) {
-      const errorMsg = 'No price services could be initialized. Please check your API keys.';
+      const errorMsg = 'Failed to initialize any price services. Please check the console for errors.';
       setError(errorMsg);
       toast.error(errorMsg);
       setIsLoading(false);

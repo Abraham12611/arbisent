@@ -11,20 +11,12 @@ export class PriceService {
   private cacheTimeout = 30000; // 30 seconds
 
   constructor(private config: Partial<PriceServiceConfig> = {}) {
-    // Validate config
-    if (!config.coingeckoApiKey) {
-      console.warn('CoinGecko API key is missing');
-    }
-    if (!config.cmcApiKey) {
-      console.warn('CoinMarketCap API key is missing');
-    }
-    if (!config.etherscanApiKey) {
-      console.warn('Etherscan API key is missing');
-    }
+    // No need to validate config here as each service handles its own validation
   }
 
   registerService(service: BasePriceService) {
     this.services.push(service);
+    console.log(`Registered ${service.getName()} service`);
   }
 
   getServiceCount(): number {
