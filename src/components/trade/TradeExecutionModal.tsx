@@ -14,6 +14,7 @@ import { TradeConfirmation } from "./TradeConfirmation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { TradingPairSelect } from "./TradingPairSelect";
+import { Button } from "@/components/ui/button";
 
 interface TradeExecutionModalProps {
   chatId?: string;
@@ -27,7 +28,14 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
   const [tradingPair, setTradingPair] = useState<string>("SOL/USDC");
   const [tradeType, setTradeType] = useState<string>("market");
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const { processMessage, isProcessing, lastParsedMessage, errors } = useTradeNLU();
+  const { 
+    processMessage, 
+    isProcessing, 
+    lastParsedMessage, 
+    errors,
+    isEthereumConnected,
+    isSolanaConnected
+  } = useTradeNLU();
 
   useEffect(() => {
     if (chatId) {
@@ -54,6 +62,20 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
     } catch (error: any) {
       console.error('Error loading chat history:', error);
       toast.error("Failed to load chat history");
+    }
+  };
+
+  const connectEthereumWallet = async () => {
+    if (window.ethereum) {
+      try {
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        toast.success('Ethereum wallet connected!');
+      } catch (error) {
+        console.error('Failed to connect Ethereum wallet:', error);
+        toast.error('Failed to connect Ethereum wallet');
+      }
+    } else {
+      toast.error('Please install MetaMask or another Ethereum wallet');
     }
   };
 
@@ -91,6 +113,10 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
     if (!lastParsedMessage) return;
 
     try {
+      // Check wallet connection before proceeding
+      const canProceed = await confirmTrade();
+      if (!canProceed) return;
+
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
       if (!user) throw new Error("No user found");
@@ -175,6 +201,31 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
         </p>
       </div>
 
+      {(!isSolanaConnected || !isEthereumConnected) && (
+        <Alert className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {!isSolanaConnected && (
+              <div className="mb-2">
+                Please connect your Solana wallet to continue
+              </div>
+            )}
+            {!isEthereumConnected && (
+              <div className="flex items-center gap-2">
+                <span>Please connect your Ethereum wallet to continue</span>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={connectEthereumWallet}
+                >
+                  Connect Ethereum Wallet
+                </Button>
+              </div>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <ChatHistory messages={chatHistory} />
 
       {errors.length > 0 && (
@@ -219,6 +270,7 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
               onChange={setPrompt}
               onSubmit={handleSubmit}
               isLoading={isLoading || isProcessing}
+              disabled={!isSolanaConnected || !isEthereumConnected}
             />
           </CardContent>
         </Card>
