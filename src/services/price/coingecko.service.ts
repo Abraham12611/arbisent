@@ -3,6 +3,8 @@ import { BasePriceService } from "./price.service";
 
 export class CoinGeckoService extends BasePriceService {
   private readonly API_URL = "https://api.coingecko.com/api/v3";
+  private lastCallTime: number = 0;
+  private readonly RATE_LIMIT_DELAY = 1500; // 1.5 seconds between calls for public API
   
   constructor(private apiKey: string) {
     super();
@@ -12,14 +14,33 @@ export class CoinGeckoService extends BasePriceService {
     return "CoinGecko";
   }
 
+  private async rateLimitedFetch(url: string): Promise<Response> {
+    const now = Date.now();
+    const timeSinceLastCall = now - this.lastCallTime;
+    
+    if (timeSinceLastCall < this.RATE_LIMIT_DELAY) {
+      await new Promise(resolve => 
+        setTimeout(resolve, this.RATE_LIMIT_DELAY - timeSinceLastCall)
+      );
+    }
+    
+    this.lastCallTime = Date.now();
+    return fetch(url, {
+      headers: {
+        'x-cg-demo-api-key': this.apiKey
+      }
+    });
+  }
+
   async getAssets(types: AssetType[]): Promise<Asset[]> {
     try {
-      const response = await fetch(
-        `${this.API_URL}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&sparkline=false&x_cg_demo_api_key=${this.apiKey}`
+      // Using query parameter for demo API key as backup in case headers are not supported
+      const response = await this.rateLimitedFetch(
+        `${this.API_URL}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&sparkline=false&price_change_percentage=24h&x_cg_demo_api_key=${this.apiKey}`
       );
 
       if (!response.ok) {
-        throw new Error("Failed to fetch from CoinGecko");
+        throw new Error(`Failed to fetch from CoinGecko: ${response.status}`);
       }
 
       const data = await response.json();
@@ -29,7 +50,7 @@ export class CoinGeckoService extends BasePriceService {
         symbol: coin.symbol.toUpperCase(),
         type: this.determineAssetType(coin),
         price: coin.current_price,
-        priceChange24h: coin.price_change_percentage_24h,
+        priceChange24h: coin.price_change_percentage_24h || 0,
         marketCap: coin.market_cap,
         volume24h: coin.total_volume,
         lastUpdated: new Date(),

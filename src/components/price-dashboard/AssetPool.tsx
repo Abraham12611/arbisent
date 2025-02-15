@@ -18,13 +18,12 @@ export const AssetPool = ({ onAssetsUpdate }: AssetPoolProps) => {
 
   useEffect(() => {
     const priceService = new PriceService({
-      coingeckoApiKey: import.meta.env.VITE_COINGECKO_API_KEY,
       cmcApiKey: import.meta.env.VITE_CMC_API_KEY,
       etherscanApiKey: import.meta.env.VITE_ETHERSCAN_API_KEY,
     });
 
     // Register all services
-    priceService.registerService(new CoinGeckoService(import.meta.env.VITE_COINGECKO_API_KEY));
+    priceService.registerService(new CoinGeckoService());
     priceService.registerService(new CMCService(import.meta.env.VITE_CMC_API_KEY));
     priceService.registerService(new DexPriceService(import.meta.env.VITE_ETHERSCAN_API_KEY));
 
