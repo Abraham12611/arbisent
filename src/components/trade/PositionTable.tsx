@@ -7,9 +7,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Settings2 } from "lucide-react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatPrice } from "@/lib/utils";
+import { PositionControls } from "./PositionControls";
 
 interface Position {
   id: string;
@@ -31,6 +34,8 @@ interface PositionTableProps {
 }
 
 export function PositionTable({ positions, isLoading, onPositionClose }: PositionTableProps) {
+  const [expandedPosition, setExpandedPosition] = useState<string | null>(null);
+
   const handleClosePosition = async (positionId: string) => {
     try {
       const { error } = await supabase
@@ -76,36 +81,61 @@ export function PositionTable({ positions, isLoading, onPositionClose }: Positio
         </TableHeader>
         <TableBody>
           {positions.map((position) => (
-            <TableRow key={position.id}>
-              <TableCell className="font-medium">{position.symbol}</TableCell>
-              <TableCell>{position.type}</TableCell>
-              <TableCell>
-                <span className={position.side === 'LONG' ? 'text-green-500' : 'text-red-500'}>
-                  {position.side}
-                </span>
-              </TableCell>
-              <TableCell>{formatPrice(position.entry_price)}</TableCell>
-              <TableCell>{formatPrice(position.current_price)}</TableCell>
-              <TableCell>{position.amount}</TableCell>
-              <TableCell className={position.profit_loss >= 0 ? 'text-green-500' : 'text-red-500'}>
-                {formatPrice(position.profit_loss)}
-              </TableCell>
-              <TableCell>
-                {position.stop_loss ? formatPrice(position.stop_loss) : '-'}
-              </TableCell>
-              <TableCell>
-                {position.take_profit ? formatPrice(position.take_profit) : '-'}
-              </TableCell>
-              <TableCell>
-                <Button 
-                  variant="destructive" 
-                  size="sm"
-                  onClick={() => handleClosePosition(position.id)}
-                >
-                  Close
-                </Button>
-              </TableCell>
-            </TableRow>
+            <>
+              <TableRow key={position.id}>
+                <TableCell className="font-medium">{position.symbol}</TableCell>
+                <TableCell>{position.type}</TableCell>
+                <TableCell>
+                  <span className={position.side === 'LONG' ? 'text-green-500' : 'text-red-500'}>
+                    {position.side}
+                  </span>
+                </TableCell>
+                <TableCell>{formatPrice(position.entry_price)}</TableCell>
+                <TableCell>{formatPrice(position.current_price)}</TableCell>
+                <TableCell>{position.amount}</TableCell>
+                <TableCell className={position.profit_loss >= 0 ? 'text-green-500' : 'text-red-500'}>
+                  {formatPrice(position.profit_loss)}
+                </TableCell>
+                <TableCell>
+                  {position.stop_loss ? formatPrice(position.stop_loss) : '-'}
+                </TableCell>
+                <TableCell>
+                  {position.take_profit ? formatPrice(position.take_profit) : '-'}
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => setExpandedPosition(expandedPosition === position.id ? null : position.id)}
+                    >
+                      <Settings2 className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => handleClosePosition(position.id)}
+                    >
+                      Close
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+              {expandedPosition === position.id && (
+                <TableRow>
+                  <TableCell colSpan={10} className="p-0">
+                    <PositionControls
+                      positionId={position.id}
+                      symbol={position.symbol}
+                      currentPrice={position.current_price}
+                      stopLoss={position.stop_loss || null}
+                      takeProfit={position.take_profit || null}
+                      onUpdate={() => setExpandedPosition(null)}
+                    />
+                  </TableCell>
+                </TableRow>
+              )}
+            </>
           ))}
           {positions.length === 0 && (
             <TableRow>
