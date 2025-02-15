@@ -56,11 +56,11 @@ const Hero = () => {
                 <img src="/bitcoin.png" alt="Bitcoin" className="w-full h-full object-contain" />
               </div>
               {/* Ethereum */}
-              <div className="absolute top-1/4 right-1/4 w-16 h-16">
+              <div className="absolute top-1/4 right-1/4 w-20 h-20">
                 <img src="/ethereum.webp" alt="Ethereum" className="w-full h-full object-contain" />
               </div>
               {/* Binance */}
-              <div className="absolute top-1/2 right-0 w-14 h-14">
+              <div className="absolute top-1/2 right-0 w-24 h-24">
                 <img src="/binance.webp" alt="Binance" className="w-full h-full object-contain" />
               </div>
               {/* Solana */}
@@ -68,7 +68,7 @@ const Hero = () => {
                 <img src="/solana.png" alt="Solana" className="w-full h-full object-contain" />
               </div>
               {/* USDT */}
-              <div className="absolute top-1/3 right-1/2 w-16 h-16">
+              <div className="absolute top-1/2 right-1/4 w-16 h-16">
                 <img src="/usdt.webp" alt="USDT" className="w-full h-full object-contain" />
               </div>
             </div>
