@@ -3,6 +3,8 @@ import { ParsedTradeMessage, NLUResult } from '@/lib/nlu/types';
 import { parseTradeMessage, validateTradeParameters } from '@/lib/nlu/parser';
 import { toast } from 'sonner';
 import { ArbitrageService } from '../services/arbitrage/arbitrage.service';
+import { providers } from 'ethers';
+import { useWallet } from '@solana/wallet-adapter-react';
 
 export type MessageType = 'text' | 'trade' | 'arbitrage';
 
@@ -19,9 +21,21 @@ export function useTradeNLU() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastParsedMessage, setLastParsedMessage] = useState<ParsedTradeMessage | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
-  const arbitrageService = new ArbitrageService();
+  const { publicKey, signTransaction } = useWallet();
+  
+  // Initialize provider and arbitrage service
+  const provider = new providers.JsonRpcProvider(
+    import.meta.env.VITE_ETHEREUM_RPC_URL || 'https://eth-mainnet.g.alchemy.com/v2/your-api-key'
+  );
+  
+  const arbitrageService = new ArbitrageService(provider);
 
   const processMessage = useCallback(async (input: string) => {
+    if (!publicKey) {
+      toast.error('Please connect your wallet first');
+      return null;
+    }
+
     const lowerInput = input.toLowerCase();
     const newMessage: Message = {
       id: crypto.randomUUID(),
@@ -30,25 +44,36 @@ export function useTradeNLU() {
       timestamp: Date.now(),
     };
 
-    // Check for arbitrage scanning request
-    if (lowerInput.includes('arbitrage') || 
-        (lowerInput.includes('search') && lowerInput.includes('opportunities'))) {
-      newMessage.type = 'arbitrage';
-      
-      // Extract trading pair if specified, default to ETH/USDT
-      const pair = extractTradingPair(lowerInput) || 'ETH/USDT';
-      
-      // Scan for opportunities
-      const opportunities = await arbitrageService.scanForOpportunities(pair);
-      newMessage.data = { opportunities, pair };
-    }
-    // Add other message type handlers here...
+    try {
+      // Check for arbitrage scanning request
+      if (lowerInput.includes('arbitrage') || 
+          (lowerInput.includes('search') && lowerInput.includes('opportunities'))) {
+        newMessage.type = 'arbitrage';
+        
+        // Extract trading pair if specified, default to ETH/USDT
+        const pair = extractTradingPair(lowerInput) || 'ETH/USDT';
+        
+        // Scan for opportunities
+        const opportunities = await arbitrageService.scanForOpportunities(pair);
+        newMessage.data = { opportunities, pair };
+      }
+      // Add other message type handlers here...
 
-    setMessages(prev => [...prev, newMessage]);
-    return newMessage;
-  }, []);
+      setMessages(prev => [...prev, newMessage]);
+      return newMessage;
+    } catch (error) {
+      console.error('Error processing message:', error);
+      toast.error('Failed to process message');
+      return null;
+    }
+  }, [publicKey, arbitrageService]);
 
   const processTradeMessage = async (message: string): Promise<ParsedTradeMessage | null> => {
+    if (!publicKey) {
+      setErrors(['Please connect your wallet first']);
+      return null;
+    }
+
     try {
       setIsProcessing(true);
       setErrors([]);

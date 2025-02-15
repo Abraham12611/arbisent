@@ -1,13 +1,16 @@
 import { v4 as uuidv4 } from 'uuid';
 import { DexPriceService } from './dex-price.service';
 import { AaveFlashLoanService } from './aave-flash-loan.service';
-import { BrowserProvider, type Signer } from 'ethers';
+import { BrowserProvider, type Signer, providers } from 'ethers';
 
 interface DEXPrice {
   dex: string;
   price: number;
   liquidity: number;
 }
+
+// Mainnet Aave V3 Pool Address
+const AAVE_V3_POOL_ADDRESS = '0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2';
 
 export interface ArbitrageOpportunity {
   id: string;
@@ -30,14 +33,20 @@ export class ArbitrageService {
   private readonly MIN_PROFIT_PERCENTAGE = 0.5; // 0.5% minimum profit
   private readonly GAS_ESTIMATE = 0.01; // Estimated gas in ETH
   private dexPriceService: DexPriceService;
-  private aaveService: AaveFlashLoanService;
+  private flashLoanService: AaveFlashLoanService;
+  private provider: providers.JsonRpcProvider;
+  private signer: Signer;
 
-  constructor(provider: BrowserProvider, signer: Signer) {
+  constructor(provider?: providers.JsonRpcProvider, signer?: Signer) {
+    // Initialize with default provider if not provided
+    this.provider = provider || new providers.JsonRpcProvider('https://eth-mainnet.g.alchemy.com/v2/your-api-key');
+    this.signer = signer || this.provider.getSigner();
+    
     this.dexPriceService = new DexPriceService();
-    this.aaveService = new AaveFlashLoanService(
-      provider,
-      signer,
-      import.meta.env.VITE_AAVE_POOL_ADDRESS
+    this.flashLoanService = new AaveFlashLoanService(
+      this.provider,
+      this.signer,
+      AAVE_V3_POOL_ADDRESS
     );
   }
 
@@ -46,8 +55,8 @@ export class ArbitrageService {
       const prices = await this.dexPriceService.getPrices(pair);
       return this.findArbitrageOpportunities(pair, prices);
     } catch (error) {
-      console.error('Error scanning for arbitrage:', error);
-      return [];
+      console.error('Error scanning for opportunities:', error);
+      throw error;
     }
   }
 
@@ -126,13 +135,21 @@ export class ArbitrageService {
     return Math.min(Math.max(Math.round(chance), 0), 100);
   }
 
-  async executeTrade(opportunity: ArbitrageOpportunity): Promise<string> {
-    // TODO: Implement DEX trade execution
-    console.log('Executing trade:', opportunity);
-    return "0x..."; // Return mock transaction hash
+  async executeArbitrage(opportunity: ArbitrageOpportunity): Promise<string> {
+    try {
+      return await this.flashLoanService.executeFlashLoan(opportunity);
+    } catch (error) {
+      console.error('Error executing arbitrage:', error);
+      throw error;
+    }
   }
 
-  async executeFlashLoan(opportunity: ArbitrageOpportunity): Promise<string> {
-    return this.aaveService.executeFlashLoan(opportunity);
+  async estimateGas(opportunity: ArbitrageOpportunity): Promise<bigint> {
+    try {
+      return await this.flashLoanService.estimateGas(opportunity);
+    } catch (error) {
+      console.error('Error estimating gas:', error);
+      throw error;
+    }
   }
 } 
