@@ -1,14 +1,54 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { ParsedTradeMessage, NLUResult } from '@/lib/nlu/types';
 import { parseTradeMessage, validateTradeParameters } from '@/lib/nlu/parser';
 import { toast } from 'sonner';
+import { ArbitrageService } from '../services/arbitrage/arbitrage.service';
+
+export type MessageType = 'text' | 'trade' | 'arbitrage';
+
+export interface Message {
+  id: string;
+  type: MessageType;
+  content: string;
+  timestamp: number;
+  data?: any;
+}
 
 export function useTradeNLU() {
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastParsedMessage, setLastParsedMessage] = useState<ParsedTradeMessage | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
+  const arbitrageService = new ArbitrageService();
 
-  const processMessage = async (message: string): Promise<ParsedTradeMessage | null> => {
+  const processMessage = useCallback(async (input: string) => {
+    const lowerInput = input.toLowerCase();
+    const newMessage: Message = {
+      id: crypto.randomUUID(),
+      type: 'text',
+      content: input,
+      timestamp: Date.now(),
+    };
+
+    // Check for arbitrage scanning request
+    if (lowerInput.includes('arbitrage') || 
+        (lowerInput.includes('search') && lowerInput.includes('opportunities'))) {
+      newMessage.type = 'arbitrage';
+      
+      // Extract trading pair if specified, default to ETH/USDT
+      const pair = extractTradingPair(lowerInput) || 'ETH/USDT';
+      
+      // Scan for opportunities
+      const opportunities = await arbitrageService.scanForOpportunities(pair);
+      newMessage.data = { opportunities, pair };
+    }
+    // Add other message type handlers here...
+
+    setMessages(prev => [...prev, newMessage]);
+    return newMessage;
+  }, []);
+
+  const processTradeMessage = async (message: string): Promise<ParsedTradeMessage | null> => {
     try {
       setIsProcessing(true);
       setErrors([]);
@@ -39,9 +79,30 @@ export function useTradeNLU() {
   };
 
   return {
+    messages,
     processMessage,
+    processTradeMessage,
     isProcessing,
     lastParsedMessage,
     errors,
+    clearMessages: () => setMessages([]),
   };
+}
+
+function extractTradingPair(input: string): string | null {
+  // Common trading pair patterns
+  const patterns = [
+    /\b(ETH|BTC|USDT|USDC|DAI|BNB|MATIC)\/?(ETH|BTC|USDT|USDC|DAI|BNB|MATIC)\b/i,
+    /\b(ETH|BTC|USDT|USDC|DAI|BNB|MATIC)\s*-\s*(ETH|BTC|USDT|USDC|DAI|BNB|MATIC)\b/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = input.match(pattern);
+    if (match) {
+      const [_, base, quote] = match;
+      return `${base.toUpperCase()}/${quote.toUpperCase()}`;
+    }
+  }
+
+  return null;
 }
