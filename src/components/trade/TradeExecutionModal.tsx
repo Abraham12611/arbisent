@@ -261,7 +261,7 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
     <div className="flex flex-col h-full max-w-3xl mx-auto justify-center">
       <div className="flex flex-col items-center justify-center mb-8 text-center">
         <img 
-          src="/lovable-uploads/998ad3dc-284b-4f48-b8db-74c80e24495a.png" 
+          src="/lovable-uploads/hermes-sent.png" 
           alt="Trade Bot" 
           className="w-16 h-16 mb-4"
         />
