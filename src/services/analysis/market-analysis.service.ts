@@ -1,5 +1,8 @@
 import { Asset, AssetType } from "@/types/price-dashboard";
 import { PriceService } from "@/services/price/price.service";
+import { CoinGeckoService } from "@/services/price/coingecko.service";
+import { CMCService } from "@/services/price/cmc.service";
+import { DexPriceService } from "@/services/price/dex.service";
 import { formatPrice, formatNumber } from "@/lib/utils";
 
 interface ArbitrageOpportunity {
@@ -26,6 +29,37 @@ export class MarketAnalysisService {
 
   constructor() {
     this.priceService = new PriceService();
+
+    // Register CoinGecko service (works with or without API key)
+    const coingeckoApiKey = import.meta.env.VITE_COINGECKO_API_KEY;
+    try {
+      this.priceService.registerService(new CoinGeckoService(coingeckoApiKey));
+    } catch (error) {
+      console.error('Failed to initialize CoinGecko service:', error);
+    }
+
+    // Try to register CMC service if API key is available
+    const cmcApiKey = import.meta.env.VITE_CMC_API_KEY;
+    if (cmcApiKey) {
+      try {
+        this.priceService.registerService(new CMCService(cmcApiKey));
+      } catch (error) {
+        console.error('Failed to initialize CMC service:', error);
+      }
+    }
+
+    // Try to register DEX service if API key is available
+    const etherscanApiKey = import.meta.env.VITE_ETHERSCAN_API_KEY;
+    if (etherscanApiKey) {
+      try {
+        this.priceService.registerService(new DexPriceService(etherscanApiKey));
+      } catch (error) {
+        console.error('Failed to initialize DEX service:', error);
+      }
+    }
+
+    // Log registered services count
+    console.log(`Initialized MarketAnalysisService with ${this.priceService.getServiceCount()} price services`);
   }
 
   async analyzeMarket(): Promise<{
