@@ -28,8 +28,9 @@ export class MarketAnalysisService {
     this.priceService = new PriceService();
   }
 
-  async analyzeMarket(): Promise<string[]> {
+  async analyzeMarket(): Promise<{ insights: string[], trendData: { type: AssetType; avgPriceChange: number; totalVolume: number; }[] }> {
     const insights: string[] = [];
+    const trendData: { type: AssetType; avgPriceChange: number; totalVolume: number; }[] = [];
     
     try {
       // Get assets from all sources
@@ -42,6 +43,15 @@ export class MarketAnalysisService {
       // Analyze market trends
       const trends = this.analyzeTrends(assets);
       insights.push(this.formatTrendInsights(trends));
+
+      // Convert trends to chart data
+      trends.forEach((trend, type) => {
+        trendData.push({
+          type,
+          avgPriceChange: trend.avgPriceChange,
+          totalVolume: trend.totalVolume
+        });
+      });
 
       // Group assets by symbol for comparison
       const assetsBySymbol = this.groupAssetsBySymbol(assets);
@@ -80,7 +90,7 @@ export class MarketAnalysisService {
       insights.push('❌ Error analyzing market data. Please try again.');
     }
 
-    return insights;
+    return { insights, trendData };
   }
 
   private analyzeTrends(assets: Asset[]): Map<AssetType, MarketTrend> {
@@ -198,5 +208,27 @@ export class MarketAnalysisService {
            `   • Analyzing ${totalAssets} assets\n` +
            `   • Average 24h Change: ${avgPriceChange.toFixed(2)}%\n` +
            `   • Market Sentiment: ${sentiment}`;
+  }
+
+  private calculateConfidence(asset1: Asset, asset2: Asset): number {
+    // Calculate confidence based on volume and market cap
+    const volumeRatio = Math.min(asset1.volume24h, asset2.volume24h) / 
+                       Math.max(asset1.volume24h, asset2.volume24h);
+    
+    const marketCapRatio = Math.min(asset1.marketCap, asset2.marketCap) /
+                          Math.max(asset1.marketCap, asset2.marketCap);
+    
+    return (volumeRatio * 0.7) + (marketCapRatio * 0.3); // Weighted average
+  }
+
+  private groupAssetsBySymbol(assets: Asset[]): Map<string, Asset[]> {
+    const grouped = new Map<string, Asset[]>();
+    
+    assets.forEach(asset => {
+      const existing = grouped.get(asset.symbol) || [];
+      grouped.set(asset.symbol, [...existing, asset]);
+    });
+    
+    return grouped;
   }
 } 

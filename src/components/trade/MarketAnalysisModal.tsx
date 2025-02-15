@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { X, RefreshCw } from "lucide-react";
 import { MarketAnalysisService } from "@/services/analysis/market-analysis.service";
+import { MarketTrendChart } from "./MarketTrendChart";
+import { AssetType } from "@/types/price-dashboard";
 
 interface MarketAnalysisModalProps {
   isOpen: boolean;
@@ -13,9 +15,16 @@ interface AnalysisMessage {
   timestamp: Date;
 }
 
+interface TrendData {
+  type: AssetType;
+  avgPriceChange: number;
+  totalVolume: number;
+}
+
 export const MarketAnalysisModal = ({ isOpen, onClose }: MarketAnalysisModalProps) => {
   const [messages, setMessages] = useState<AnalysisMessage[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [trends, setTrends] = useState<TrendData[]>([]);
   const analysisService = new MarketAnalysisService();
 
   const performAnalysis = async () => {
@@ -32,7 +41,8 @@ export const MarketAnalysisModal = ({ isOpen, onClose }: MarketAnalysisModalProp
     ]);
 
     try {
-      const insights = await analysisService.analyzeMarket();
+      const { insights, trendData } = await analysisService.analyzeMarket();
+      setTrends(trendData);
       
       setMessages(prev => [
         ...prev.filter(m => m.type !== 'loading'),
@@ -79,8 +89,14 @@ export const MarketAnalysisModal = ({ isOpen, onClose }: MarketAnalysisModalProp
           </button>
         </div>
 
-        {/* Chat Content */}
-        <div className="p-4 h-[60vh] overflow-y-auto">
+        {/* Content */}
+        <div className="p-4 h-[60vh] overflow-y-auto space-y-4">
+          {/* Chart Section */}
+          {trends.length > 0 && (
+            <MarketTrendChart trends={trends} />
+          )}
+
+          {/* Messages Section */}
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-arbisent-text/60">
               🔄 Initializing market analysis...
