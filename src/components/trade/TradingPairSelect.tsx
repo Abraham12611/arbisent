@@ -14,7 +14,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { InchService } from "@/services/dex/inch.service";
+import { CoinGeckoTradingService } from "@/services/dex/coingecko-trading.service";
 
 interface TradingPairSelectProps {
   value: string;
@@ -32,8 +32,8 @@ export function TradingPairSelect({ value, onValueChange }: TradingPairSelectPro
       try {
         setIsLoading(true);
         setError(null);
-        const inchService = InchService.getInstance();
-        const tradingPairs = await inchService.getTradingPairs();
+        const tradingService = CoinGeckoTradingService.getInstance();
+        const tradingPairs = await tradingService.getTradingPairs();
         setPairs(tradingPairs);
       } catch (error) {
         console.error("Failed to load trading pairs:", error);
