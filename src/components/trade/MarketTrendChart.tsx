@@ -1,13 +1,8 @@
-import { Card } from "@/components/ui/card";
-import { AssetType, Asset } from "@/types/price-dashboard";
 import {
-  Bar,
   BarChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  Tooltip,
+  Card,
 } from "@tremor/react";
+import { AssetType, Asset } from "@/types/price-dashboard";
 
 interface MarketTrendChartProps {
   trends: {
@@ -28,20 +23,15 @@ export const MarketTrendChart = ({ trends }: MarketTrendChartProps) => {
     <Card className="p-4 bg-arbisent-background-light">
       <h3 className="text-sm font-medium text-arbisent-text mb-4">Market Trends Overview</h3>
       <div className="h-48">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={chartData}
-            index="name"
-            categories={["Price Change %"]}
-            colors={["blue"]}
-            valueFormatter={(number: number) => `${number.toFixed(2)}%`}
-            yAxisWidth={56}
-          >
-            <XAxis />
-            <YAxis />
-            <Tooltip />
-          </BarChart>
-        </ResponsiveContainer>
+        <BarChart
+          data={chartData}
+          index="name"
+          categories={["Price Change %"]}
+          colors={["blue"]}
+          valueFormatter={(number: number) => `${number.toFixed(2)}%`}
+          showGridLines={true}
+          showLegend={true}
+        />
       </div>
     </Card>
   );
