@@ -28,9 +28,30 @@ export class MarketAnalysisService {
     this.priceService = new PriceService();
   }
 
-  async analyzeMarket(): Promise<{ insights: string[], trendData: { type: AssetType; avgPriceChange: number; totalVolume: number; }[] }> {
+  async analyzeMarket(): Promise<{
+    insights: string[];
+    trendData: { type: AssetType; avgPriceChange: number; totalVolume: number; }[];
+    opportunities: {
+      symbol: string;
+      profitPercentage: number;
+      buyFrom: { source: string; price: number; };
+      sellAt: { source: string; price: number; };
+      estimatedProfit: number;
+      confidence: number;
+      risk: 'LOW' | 'MEDIUM' | 'HIGH';
+    }[];
+  }> {
     const insights: string[] = [];
     const trendData: { type: AssetType; avgPriceChange: number; totalVolume: number; }[] = [];
+    const opportunities: {
+      symbol: string;
+      profitPercentage: number;
+      buyFrom: { source: string; price: number; };
+      sellAt: { source: string; price: number; };
+      estimatedProfit: number;
+      confidence: number;
+      risk: 'LOW' | 'MEDIUM' | 'HIGH';
+    }[] = [];
     
     try {
       // Get assets from all sources
@@ -57,18 +78,19 @@ export class MarketAnalysisService {
       const assetsBySymbol = this.groupAssetsBySymbol(assets);
       
       // Find arbitrage opportunities
-      const opportunities = this.findArbitrageOpportunities(assetsBySymbol);
+      const arbitrageOpps = this.findArbitrageOpportunities(assetsBySymbol);
       
-      // Generate arbitrage insights
-      if (opportunities.length === 0) {
+      // Generate arbitrage insights and opportunities
+      if (arbitrageOpps.length === 0) {
         insights.push("🔍 No significant arbitrage opportunities found at the moment.");
       } else {
-        insights.push(`\n💡 Found ${opportunities.length} potential arbitrage opportunities:`);
+        insights.push(`\n💡 Found ${arbitrageOpps.length} potential arbitrage opportunities:`);
         
-        opportunities.forEach(opp => {
+        arbitrageOpps.forEach(opp => {
           const profitPercentage = (opp.priceDifference / opp.sourceAsset.price) * 100;
           const riskEmoji = this.getRiskEmoji(opp.riskLevel);
           
+          // Add to insights
           insights.push(
             `${riskEmoji} ${opp.sourceAsset.symbol}: ${profitPercentage.toFixed(2)}% potential profit\n` +
             `   • Buy from: ${opp.sourceAsset.source} at ${formatPrice(opp.sourceAsset.price)}\n` +
@@ -76,6 +98,23 @@ export class MarketAnalysisService {
             `   • Estimated profit: ${formatPrice(opp.potentialProfit)}\n` +
             `   • Confidence: ${(opp.confidence * 100).toFixed(0)}% | Risk: ${opp.riskLevel}`
           );
+
+          // Add to opportunities
+          opportunities.push({
+            symbol: opp.sourceAsset.symbol,
+            profitPercentage,
+            buyFrom: {
+              source: opp.sourceAsset.source,
+              price: opp.sourceAsset.price
+            },
+            sellAt: {
+              source: opp.targetAsset.source,
+              price: opp.targetAsset.price
+            },
+            estimatedProfit: opp.potentialProfit,
+            confidence: opp.confidence,
+            risk: opp.riskLevel
+          });
         });
       }
 
@@ -90,7 +129,7 @@ export class MarketAnalysisService {
       insights.push('❌ Error analyzing market data. Please try again.');
     }
 
-    return { insights, trendData };
+    return { insights, trendData, opportunities };
   }
 
   private analyzeTrends(assets: Asset[]): Map<AssetType, MarketTrend> {

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { X, RefreshCw } from "lucide-react";
 import { MarketAnalysisService } from "@/services/analysis/market-analysis.service";
 import { MarketTrendChart } from "./MarketTrendChart";
+import { OpportunityCard } from "./OpportunityCard";
 import { AssetType } from "@/types/price-dashboard";
 
 interface MarketAnalysisModalProps {
@@ -21,10 +22,27 @@ interface TrendData {
   totalVolume: number;
 }
 
+interface Opportunity {
+  symbol: string;
+  profitPercentage: number;
+  buyFrom: {
+    source: string;
+    price: number;
+  };
+  sellAt: {
+    source: string;
+    price: number;
+  };
+  estimatedProfit: number;
+  confidence: number;
+  risk: 'LOW' | 'MEDIUM' | 'HIGH';
+}
+
 export const MarketAnalysisModal = ({ isOpen, onClose }: MarketAnalysisModalProps) => {
   const [messages, setMessages] = useState<AnalysisMessage[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [trends, setTrends] = useState<TrendData[]>([]);
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const analysisService = new MarketAnalysisService();
 
   const performAnalysis = async () => {
@@ -41,8 +59,9 @@ export const MarketAnalysisModal = ({ isOpen, onClose }: MarketAnalysisModalProp
     ]);
 
     try {
-      const { insights, trendData } = await analysisService.analyzeMarket();
+      const { insights, trendData, opportunities } = await analysisService.analyzeMarket();
       setTrends(trendData);
+      setOpportunities(opportunities);
       
       setMessages(prev => [
         ...prev.filter(m => m.type !== 'loading'),
@@ -94,6 +113,19 @@ export const MarketAnalysisModal = ({ isOpen, onClose }: MarketAnalysisModalProp
           {/* Chart Section */}
           {trends.length > 0 && (
             <MarketTrendChart trends={trends} />
+          )}
+
+          {/* Opportunities Section */}
+          {opportunities.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-arbisent-text">Trading Opportunities</h3>
+              {opportunities.map((opportunity, index) => (
+                <OpportunityCard
+                  key={`${opportunity.symbol}-${index}`}
+                  {...opportunity}
+                />
+              ))}
+            </div>
           )}
 
           {/* Messages Section */}
