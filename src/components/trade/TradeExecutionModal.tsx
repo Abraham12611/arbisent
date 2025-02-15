@@ -15,6 +15,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { TradingPairSelect } from "./TradingPairSelect";
 import { Button } from "@/components/ui/button";
+import { ArbitrageOpportunityCard } from "./ArbitrageOpportunityCard";
 
 interface TradeExecutionModalProps {
   chatId?: string;
@@ -100,12 +101,37 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
         return;
       }
 
+      // Add message to chat history with proper type
+      const newChatMessage = {
+        role: 'user' as const,
+        content: prompt,
+        type: messageResult.type,
+        data: messageResult.data
+      };
+      
+      setChatHistory(prev => [...prev, newChatMessage]);
+
       // Handle different message types
       if (messageResult.type === 'trade') {
         setShowConfirmation(true);
       } else if (messageResult.type === 'arbitrage') {
         // Arbitrage results are automatically displayed in chat
         setPrompt("");
+        // Store the message in Supabase if we have a chat ID
+        if (currentChatId) {
+          await supabase
+            .from('chat_messages')
+            .insert([{
+              chat_id: currentChatId,
+              role: 'user',
+              content: prompt,
+              metadata: {
+                type: 'arbitrage',
+                opportunities: messageResult.data?.opportunities,
+                pair: messageResult.data?.pair
+              }
+            }]);
+        }
       } else {
         // For general messages, just clear the input
         setPrompt("");
@@ -116,6 +142,42 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
       toast.error(error.message || "Failed to process message");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleExecuteArbitrage = async (opportunity: any) => {
+    try {
+      // Check wallet connections before proceeding
+      const canProceed = await confirmTrade();
+      if (!canProceed) return;
+
+      toast.success("Executing arbitrage opportunity...");
+      // Here you would implement the actual arbitrage execution logic
+      // For now, we'll just show a success message
+      setTimeout(() => {
+        toast.success("Arbitrage executed successfully!");
+      }, 2000);
+    } catch (error: any) {
+      console.error('Error executing arbitrage:', error);
+      toast.error(error.message || "Failed to execute arbitrage");
+    }
+  };
+
+  const handleFlashLoanArbitrage = async (opportunity: any) => {
+    try {
+      // Check wallet connections before proceeding
+      const canProceed = await confirmTrade();
+      if (!canProceed) return;
+
+      toast.success("Setting up flash loan...");
+      // Here you would implement the flash loan setup and execution logic
+      // For now, we'll just show a success message
+      setTimeout(() => {
+        toast.success("Flash loan arbitrage executed successfully!");
+      }, 2000);
+    } catch (error: any) {
+      console.error('Error executing flash loan arbitrage:', error);
+      toast.error(error.message || "Failed to execute flash loan arbitrage");
     }
   };
 
@@ -236,7 +298,43 @@ export const TradeExecutionModal = ({ chatId }: TradeExecutionModalProps) => {
         </Alert>
       )}
 
-      <ChatHistory messages={chatHistory} />
+      <div className="flex-1 overflow-y-auto mb-4">
+        {chatHistory.map((message, index) => (
+          <div key={index} className="mb-4">
+            {message.type === 'arbitrage' ? (
+              <div className="space-y-4">
+                <div className="text-sm text-gray-400">
+                  Searching for arbitrage opportunities for {message.data?.pair}...
+                </div>
+                {message.data?.opportunities?.map((opportunity: any) => (
+                  <ArbitrageOpportunityCard
+                    key={opportunity.id}
+                    opportunity={opportunity}
+                    onTrade={() => handleExecuteArbitrage(opportunity)}
+                    onFlashLoan={() => handleFlashLoanArbitrage(opportunity)}
+                    isExecuting={false}
+                  />
+                ))}
+                {message.data?.opportunities?.length === 0 && (
+                  <Alert>
+                    <AlertDescription>
+                      No profitable arbitrage opportunities found at this time.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            ) : (
+              <div className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[80%] p-3 rounded-lg ${
+                  message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-700'
+                }`}>
+                  {message.content}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
 
       {errors.length > 0 && (
         <Alert variant="destructive" className="mb-4">

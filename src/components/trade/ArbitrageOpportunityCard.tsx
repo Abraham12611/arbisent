@@ -39,6 +39,18 @@ export function ArbitrageOpportunityCard({
     return "text-red-500";
   };
 
+  const handleTrade = () => {
+    if (onTrade && !isExecuting) {
+      onTrade(opportunity);
+    }
+  };
+
+  const handleFlashLoan = () => {
+    if (onFlashLoan && !isExecuting) {
+      onFlashLoan(opportunity);
+    }
+  };
+
   return (
     <Card className="bg-[#151822]/80 border-gray-800 hover:border-gray-700 transition-colors">
       <CardContent className="p-4">
@@ -82,7 +94,7 @@ export function ArbitrageOpportunityCard({
 
         <div className="flex gap-2">
           <Button
-            onClick={() => onTrade(opportunity)}
+            onClick={handleTrade}
             disabled={isExecuting}
             className="flex-1"
           >
@@ -99,7 +111,7 @@ export function ArbitrageOpportunityCard({
             )}
           </Button>
           <Button
-            onClick={() => onFlashLoan(opportunity)}
+            onClick={handleFlashLoan}
             disabled={isExecuting}
             variant="outline"
             className="flex-1"
