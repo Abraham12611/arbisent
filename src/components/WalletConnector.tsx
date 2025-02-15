@@ -1,8 +1,9 @@
+
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import type { WalletAddresses } from "@/types/preferences";
+import type { JsonWalletAddresses, JsonWalletAddress } from "@/types/preferences";
 
 interface WalletConnectorProps {
   onClose?: () => void;
@@ -28,15 +29,17 @@ export function WalletConnector({ onClose }: WalletConnectorProps) {
         .eq('id', (await supabase.auth.getUser()).data.user?.id)
         .single();
 
-      const walletAddresses = (profile?.wallet_addresses || {}) as WalletAddresses;
-      const isFirstWallet = !walletAddresses || Object.keys(walletAddresses).length === 0;
+      const walletAddresses = profile?.wallet_addresses as JsonWalletAddresses || {};
+      const isFirstWallet = Object.keys(walletAddresses).length === 0;
       
-      const updatedWalletAddresses: WalletAddresses = {
+      const updatedWalletAddresses: JsonWalletAddresses = {
         ...walletAddresses,
         phantom: {
           address: walletAddress,
-          isDefault: isFirstWallet
-        }
+          chain: 'solana',
+          isDefault: isFirstWallet,
+          lastUsed: new Date().toISOString(),
+        } as JsonWalletAddress
       };
 
       const { error } = await supabase.from('profiles').update({
@@ -74,15 +77,17 @@ export function WalletConnector({ onClose }: WalletConnectorProps) {
         .eq('id', (await supabase.auth.getUser()).data.user?.id)
         .single();
 
-      const walletAddresses = (profile?.wallet_addresses || {}) as WalletAddresses;
-      const isFirstWallet = !walletAddresses || Object.keys(walletAddresses).length === 0;
+      const walletAddresses = profile?.wallet_addresses as JsonWalletAddresses || {};
+      const isFirstWallet = Object.keys(walletAddresses).length === 0;
 
-      const updatedWalletAddresses: WalletAddresses = {
+      const updatedWalletAddresses: JsonWalletAddresses = {
         ...walletAddresses,
         metamask: {
           address: walletAddress,
-          isDefault: isFirstWallet
-        }
+          chain: 'ethereum',
+          isDefault: isFirstWallet,
+          lastUsed: new Date().toISOString(),
+        } as JsonWalletAddress
       };
 
       const { error } = await supabase.from('profiles').update({

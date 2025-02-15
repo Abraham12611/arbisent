@@ -1,25 +1,44 @@
+
+import { Json } from "@/integrations/supabase/types";
+
+export interface WalletAddress {
+  address: string;
+  label?: string;
+  isDefault: boolean;
+  chain: 'solana' | 'ethereum';
+  lastUsed?: Date;
+  balance?: string;
+}
+
+export interface JsonWalletAddress extends Record<string, Json> {
+  address: string;
+  label?: string;
+  isDefault: boolean;
+  chain: 'solana' | 'ethereum';
+  lastUsed?: string;
+  balance?: string;
+}
+
+export interface JsonWalletAddresses extends Record<string, Json> {
+  phantom?: JsonWalletAddress;
+  metamask?: JsonWalletAddress;
+}
+
+export interface WalletAddresses {
+  phantom?: WalletAddress;
+  metamask?: WalletAddress;
+}
+
 export interface EmailPreferences {
   marketing: boolean;
   trade_alerts: boolean;
   security_notifications: boolean;
-  [key: string]: boolean;
 }
 
-export interface WalletAddress {
-  address: string;
-  isDefault: boolean;
-  [key: string]: string | boolean;
-}
-
-export interface WalletAddresses {
-  [key: string]: WalletAddress | undefined;
-}
-
-export interface PrivacySettings {
-  share_trading_analytics: boolean;
-  collect_usage_data: boolean;
-  public_profile: boolean;
-  [key: string]: boolean | string | number | { [key: string]: any } | any[];
+export interface JsonEmailPreferences extends Record<string, Json> {
+  marketing: boolean;
+  trade_alerts: boolean;
+  security_notifications: boolean;
 }
 
 export interface TradingPreferences {
@@ -28,23 +47,45 @@ export interface TradingPreferences {
     default_stop_loss_percentage: number;
     default_take_profit_percentage: number;
     max_position_size_usd: number;
-    [key: string]: number | string | boolean | { [key: string]: any } | any[];
   };
   interface_preferences: {
     chart_type: string;
     default_timeframe: string;
     layout: string;
-    [key: string]: string | number | boolean | { [key: string]: any } | any[];
   };
-  [key: string]: any;
+}
+
+export interface JsonTradingPreferences extends Record<string, Json> {
+  default_pairs: string[];
+  risk_management: {
+    default_stop_loss_percentage: number;
+    default_take_profit_percentage: number;
+    max_position_size_usd: number;
+  };
+  interface_preferences: {
+    chart_type: string;
+    default_timeframe: string;
+    layout: string;
+  };
+}
+
+export interface PrivacySettings {
+  share_trading_analytics: boolean;
+  collect_usage_data: boolean;
+  public_profile: boolean;
+}
+
+export interface JsonPrivacySettings extends Record<string, Json> {
+  share_trading_analytics: boolean;
+  collect_usage_data: boolean;
+  public_profile: boolean;
 }
 
 export interface ProfileFormValues {
-  username: string;
-  avatar_url: string;
-  email_preferences: EmailPreferences;
-  [key: string]: string | EmailPreferences | { [key: string]: any } | any[];
+  username?: string;
+  avatar_url?: string;
+  email_preferences?: JsonEmailPreferences;
+  trading_preferences?: JsonTradingPreferences;
+  privacy_settings?: JsonPrivacySettings;
+  wallet_addresses?: JsonWalletAddresses;
 }
-
-// Add a type helper for Supabase JSON
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];

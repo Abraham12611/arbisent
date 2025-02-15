@@ -19,4 +19,9 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  define: {
+    'import.meta.env.VITE_COINGECKO_API_KEY': JSON.stringify(process.env.VITE_COINGECKO_API_KEY),
+    'import.meta.env.VITE_CMC_API_KEY': JSON.stringify(process.env.VITE_CMC_API_KEY),
+    'import.meta.env.VITE_ETHERSCAN_API_KEY': JSON.stringify(process.env.VITE_ETHERSCAN_API_KEY),
+  }
 }));

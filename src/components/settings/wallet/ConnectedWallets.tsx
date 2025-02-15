@@ -1,43 +1,38 @@
+
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Wallet, WalletCards, Bell, Trash2 } from "lucide-react";
+import { WalletCards } from "lucide-react";
 import { WalletConnector } from "@/components/WalletConnector";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { WalletService } from "@/services/wallet";
+import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletAddress, WalletAddresses } from "@/types/preferences";
+import { NotificationSettings } from "./NotificationSettings";
+import { WalletCard } from "./WalletCard";
 
-interface WalletAddress {
-  address: string;
-  isDefault: boolean;
-}
-
-interface WalletAddresses {
-  phantom?: WalletAddress;
-  metamask?: WalletAddress;
-}
-
-interface NotificationSettings {
-  onConnect: boolean;
-  onDisconnect: boolean;
-  lowBalance: boolean;
+interface WalletStatus {
+  balance: string;
+  isValid: boolean;
+  lastChecked: Date;
 }
 
 export function ConnectedWallets() {
   const [showWalletDialog, setShowWalletDialog] = useState(false);
   const [walletAddresses, setWalletAddresses] = useState<WalletAddresses>({});
-  const [notifications, setNotifications] = useState<NotificationSettings>({
+  const [notifications, setNotifications] = useState({
     onConnect: true,
     onDisconnect: true,
     lowBalance: true,
   });
   const [loading, setLoading] = useState(true);
+  const { publicKey, connected } = useWallet();
+  const [isChecking, setIsChecking] = useState(false);
+  const [walletStatus, setWalletStatus] = useState<{
+    [key: string]: WalletStatus
+  }>({});
 
   useEffect(() => {
     fetchWalletData();
@@ -45,6 +40,7 @@ export function ConnectedWallets() {
 
   const fetchWalletData = async () => {
     try {
+      setIsChecking(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
@@ -55,12 +51,29 @@ export function ConnectedWallets() {
         .single();
 
       if (profile?.wallet_addresses) {
-        setWalletAddresses(profile.wallet_addresses as WalletAddresses);
+        const addresses = profile.wallet_addresses as WalletAddresses;
+        setWalletAddresses(addresses);
+
+        const status: typeof walletStatus = {};
+        for (const [type, wallet] of Object.entries(addresses)) {
+          if (wallet) {
+            const isValid = await WalletService.validateWallet(wallet.address, wallet.chain);
+            const balance = await WalletService.getWalletBalance(wallet.address, wallet.chain);
+            status[type] = {
+              balance,
+              isValid,
+              lastChecked: new Date()
+            };
+          }
+        }
+        setWalletStatus(status);
       }
-      setLoading(false);
     } catch (error) {
       console.error('Error fetching wallet data:', error);
       toast.error('Failed to load wallet data');
+    } finally {
+      setIsChecking(false);
+      setLoading(false);
     }
   };
 
@@ -72,18 +85,14 @@ export function ConnectedWallets() {
       const updatedAddresses = { ...walletAddresses };
       delete updatedAddresses[type];
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({ wallet_addresses: updatedAddresses })
-        .eq('id', user.id);
-
-      if (error) throw error;
+      const result = await WalletService.updateWalletAddresses(user.id, updatedAddresses);
+      if (!result.success) throw new Error(result.error);
 
       setWalletAddresses(updatedAddresses);
       toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} wallet removed`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error removing wallet:', error);
-      toast.error('Failed to remove wallet');
+      toast.error(error.message || 'Failed to remove wallet');
     }
   };
 
@@ -102,27 +111,55 @@ export function ConnectedWallets() {
         }
       });
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({ wallet_addresses: updatedAddresses })
-        .eq('id', user.id);
-
-      if (error) throw error;
+      const result = await WalletService.updateWalletAddresses(user.id, updatedAddresses);
+      if (!result.success) throw new Error(result.error);
 
       setWalletAddresses(updatedAddresses);
       toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} set as default wallet`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error setting default wallet:', error);
       toast.error('Failed to set default wallet');
     }
   };
 
-  const toggleNotification = (type: keyof NotificationSettings) => {
+  const toggleNotification = (type: keyof typeof notifications) => {
     setNotifications(prev => ({
       ...prev,
       [type]: !prev[type]
     }));
   };
+
+  useEffect(() => {
+    if (connected && publicKey && !walletAddresses.phantom) {
+      const autoConnectPhantom = async () => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+
+          const updatedAddresses = {
+            ...walletAddresses,
+            phantom: {
+              address: publicKey.toString(),
+              isDefault: true,
+              chain: 'solana' as const,
+              lastUsed: new Date()
+            }
+          };
+
+          const result = await WalletService.updateWalletAddresses(user.id, updatedAddresses);
+          if (!result.success) throw new Error(result.error);
+
+          setWalletAddresses(updatedAddresses);
+          toast.success('Phantom wallet connected automatically');
+        } catch (error: any) {
+          console.error('Error auto-connecting Phantom wallet:', error);
+          toast.error(error.message || 'Failed to auto-connect wallet');
+        }
+      };
+
+      autoConnectPhantom();
+    }
+  }, [connected, publicKey]);
 
   return (
     <div className="space-y-6">
@@ -142,88 +179,24 @@ export function ConnectedWallets() {
             </Button>
 
             {Object.entries(walletAddresses).map(([type, data]) => (
-              <div key={type} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <img 
-                    src={`/${type}-icon.svg`} 
-                    alt={type} 
-                    className="w-8 h-8"
-                  />
-                  <div>
-                    <p className="font-medium">{type.charAt(0).toUpperCase() + type.slice(1)}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {data.address.slice(0, 6)}...{data.address.slice(-4)}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant={data.isDefault ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setDefaultWallet(type as 'phantom' | 'metamask')}
-                  >
-                    {data.isDefault ? "Default" : "Set Default"}
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => removeWallet(type as 'phantom' | 'metamask')}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+              <WalletCard
+                key={type}
+                type={type}
+                data={data as WalletAddress}
+                balance={walletStatus[type]?.balance || '0'}
+                isValid={walletStatus[type]?.isValid || false}
+                onSetDefault={() => setDefaultWallet(type as 'phantom' | 'metamask')}
+                onRemove={() => removeWallet(type as 'phantom' | 'metamask')}
+              />
             ))}
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Wallet Notifications</CardTitle>
-          <CardDescription>Configure how you want to be notified about wallet activities</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <div className="font-medium">On Connect</div>
-                <div className="text-sm text-muted-foreground">
-                  Receive notifications when a new wallet is connected
-                </div>
-              </div>
-              <Switch
-                checked={notifications.onConnect}
-                onCheckedChange={() => toggleNotification('onConnect')}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <div className="font-medium">On Disconnect</div>
-                <div className="text-sm text-muted-foreground">
-                  Receive notifications when a wallet is disconnected
-                </div>
-              </div>
-              <Switch
-                checked={notifications.onDisconnect}
-                onCheckedChange={() => toggleNotification('onDisconnect')}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <div className="font-medium">Low Balance</div>
-                <div className="text-sm text-muted-foreground">
-                  Get notified when your wallet balance is running low
-                </div>
-              </div>
-              <Switch
-                checked={notifications.lowBalance}
-                onCheckedChange={() => toggleNotification('lowBalance')}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <NotificationSettings 
+        notifications={notifications}
+        onToggle={toggleNotification}
+      />
 
       <Dialog open={showWalletDialog} onOpenChange={setShowWalletDialog}>
         <DialogContent>

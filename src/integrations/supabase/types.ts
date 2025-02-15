@@ -185,6 +185,30 @@ export type Database = {
         }
         Relationships: []
       }
+      vector_embeddings: {
+        Row: {
+          content: string
+          created_at: string | null
+          embedding: string
+          id: string
+          metadata: Json | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          embedding: string
+          id?: string
+          metadata?: Json | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          embedding?: string
+          id?: string
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
       watched_pairs: {
         Row: {
           created_at: string
@@ -212,12 +236,378 @@ export type Database = {
         }
         Relationships: []
       }
+      performance_metrics: {
+        Row: {
+          id: string
+          user_id: string | null
+          created_at: string | null
+          updated_at: string | null
+          total_trades: number
+          winning_trades: number
+          losing_trades: number
+          total_profit_loss: number
+          roi_percentage: number
+          average_trade_duration: number
+          largest_win: number
+          largest_loss: number
+          win_rate: number
+          profit_factor: number
+          sharpe_ratio: number
+          max_drawdown: number
+          chain_specific_metrics: Json | null
+          strategy_performance: Json | null
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+          total_trades: number
+          winning_trades: number
+          losing_trades: number
+          total_profit_loss: number
+          roi_percentage: number
+          average_trade_duration: number
+          largest_win: number
+          largest_loss: number
+          win_rate: number
+          profit_factor: number
+          sharpe_ratio: number
+          max_drawdown: number
+          chain_specific_metrics?: Json | null
+          strategy_performance?: Json | null
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+          total_trades?: number
+          winning_trades?: number
+          losing_trades?: number
+          total_profit_loss?: number
+          roi_percentage?: number
+          average_trade_duration?: number
+          largest_win?: number
+          largest_loss?: number
+          win_rate?: number
+          profit_factor?: number
+          sharpe_ratio?: number
+          max_drawdown?: number
+          chain_specific_metrics?: Json | null
+          strategy_performance?: Json | null
+        }
+        Relationships: []
+      }
+      trade_schedules: {
+        Row: {
+          id: string
+          user_id: string
+          asset: string
+          amount: number
+          frequency: string
+          custom_interval: number | null
+          start_time: string
+          end_time: string | null
+          is_active: boolean
+          last_executed: string | null
+          next_execution: string | null
+          execution_count: number
+          max_executions: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          asset: string
+          amount: number
+          frequency: string
+          custom_interval?: number | null
+          start_time: string
+          end_time?: string | null
+          is_active?: boolean
+          last_executed?: string | null
+          next_execution?: string | null
+          execution_count?: number
+          max_executions?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          asset?: string
+          amount?: number
+          frequency?: string
+          custom_interval?: number | null
+          start_time?: string
+          end_time?: string | null
+          is_active?: boolean
+          last_executed?: string | null
+          next_execution?: string | null
+          execution_count?: number
+          max_executions?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      trade_executions: {
+        Row: {
+          id: string
+          schedule_id: string | null
+          user_id: string
+          asset: string
+          amount: number
+          price: number | null
+          status: string
+          error: string | null
+          execution_time: string
+          completed_at: string | null
+          transaction_hash: string | null
+          gas_used: number | null
+          gas_price: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          schedule_id?: string | null
+          user_id: string
+          asset: string
+          amount: number
+          price?: number | null
+          status: string
+          error?: string | null
+          execution_time?: string
+          completed_at?: string | null
+          transaction_hash?: string | null
+          gas_used?: number | null
+          gas_price?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          schedule_id?: string | null
+          user_id?: string
+          asset?: string
+          amount?: number
+          price?: number | null
+          status?: string
+          error?: string | null
+          execution_time?: string
+          completed_at?: string | null
+          transaction_hash?: string | null
+          gas_used?: number | null
+          gas_price?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      trade_status_updates: {
+        Row: {
+          id: string
+          execution_id: string
+          status: string
+          message: string | null
+          details: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          execution_id: string
+          status: string
+          message?: string | null
+          details?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          execution_id?: string
+          status?: string
+          message?: string | null
+          details?: Json | null
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      binary_quantize:
+        | {
+            Args: {
+              "": string
+            }
+            Returns: unknown
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: unknown
+          }
+      halfvec_avg: {
+        Args: {
+          "": number[]
+        }
+        Returns: unknown
+      }
+      halfvec_out: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      halfvec_send: {
+        Args: {
+          "": unknown
+        }
+        Returns: string
+      }
+      halfvec_typmod_in: {
+        Args: {
+          "": unknown[]
+        }
+        Returns: number
+      }
+      hnsw_bit_support: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      hnsw_halfvec_support: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      hnsw_sparsevec_support: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      hnswhandler: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      ivfflat_bit_support: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      ivfflat_halfvec_support: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      ivfflathandler: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      l2_norm:
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: number
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: number
+          }
+      l2_normalize:
+        | {
+            Args: {
+              "": string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: unknown
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: unknown
+          }
+      sparsevec_out: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      sparsevec_send: {
+        Args: {
+          "": unknown
+        }
+        Returns: string
+      }
+      sparsevec_typmod_in: {
+        Args: {
+          "": unknown[]
+        }
+        Returns: number
+      }
+      vector_avg: {
+        Args: {
+          "": number[]
+        }
+        Returns: string
+      }
+      vector_dims:
+        | {
+            Args: {
+              "": string
+            }
+            Returns: number
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: number
+          }
+      vector_norm: {
+        Args: {
+          "": string
+        }
+        Returns: number
+      }
+      vector_out: {
+        Args: {
+          "": string
+        }
+        Returns: unknown
+      }
+      vector_send: {
+        Args: {
+          "": string
+        }
+        Returns: string
+      }
+      vector_typmod_in: {
+        Args: {
+          "": unknown[]
+        }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
