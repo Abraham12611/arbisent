@@ -1,10 +1,7 @@
 import { 
   Contract,
-  JsonRpcProvider,
-  Wallet,
-  AbiCoder,
-  parseUnits,
-  type Provider,
+  providers,
+  utils,
   type Signer
 } from 'ethers';
 import { ArbitrageOpportunity } from './arbitrage.service';
@@ -14,12 +11,12 @@ const AAVE_POOL_ABI = [
 ];
 
 export class AaveFlashLoanService {
-  private provider: Provider;
+  private provider: providers.JsonRpcProvider;
   private signer: Signer;
   private poolContract: Contract;
 
   constructor(
-    provider: Provider,
+    provider: providers.JsonRpcProvider,
     signer: Signer,
     poolAddress: string
   ) {
@@ -32,7 +29,7 @@ export class AaveFlashLoanService {
     try {
       const [baseToken, quoteToken] = opportunity.pair.split('/');
       
-      const loanAmount = parseUnits(
+      const loanAmount = utils.parseUnits(
         opportunity.minAmount.toString(),
         18
       );
@@ -42,9 +39,9 @@ export class AaveFlashLoanService {
       const modes = [0];
       const onBehalfOf = await this.signer.getAddress();
       
-      const abiCoder = AbiCoder.defaultAbiCoder();
-      const params = abiCoder.encode(
-        ['address', 'address', 'uint256', 'uint256'],
+      // Use utils.defaultAbiCoder for encoding parameters
+      const params = utils.defaultAbiCoder.encode(
+        ["address", "address", "uint256", "uint256"],
         [
           opportunity.buyFrom.dex,
           opportunity.sellAt.dex,
@@ -74,7 +71,7 @@ export class AaveFlashLoanService {
   async estimateGas(opportunity: ArbitrageOpportunity): Promise<bigint> {
     try {
       const [baseToken, quoteToken] = opportunity.pair.split('/');
-      const loanAmount = parseUnits(
+      const loanAmount = utils.parseUnits(
         opportunity.minAmount.toString(),
         18
       );

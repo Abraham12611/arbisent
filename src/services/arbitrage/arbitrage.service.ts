@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { DexPriceService } from './dex-price.service';
 import { AaveFlashLoanService } from './aave-flash-loan.service';
-import { type Provider, type Signer } from 'ethers';
+import { BrowserProvider, type Signer } from 'ethers';
 
 interface DEXPrice {
   dex: string;
@@ -32,7 +32,7 @@ export class ArbitrageService {
   private dexPriceService: DexPriceService;
   private aaveService: AaveFlashLoanService;
 
-  constructor(provider: Provider, signer: Signer) {
+  constructor(provider: BrowserProvider, signer: Signer) {
     this.dexPriceService = new DexPriceService();
     this.aaveService = new AaveFlashLoanService(
       provider,
