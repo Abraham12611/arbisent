@@ -1,5 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { DexPriceService } from './dex-price.service';
+import { AaveFlashLoanService } from './aave-flash-loan.service';
+import { type Provider, type Signer } from 'ethers';
 
 interface DEXPrice {
   dex: string;
@@ -28,9 +30,15 @@ export class ArbitrageService {
   private readonly MIN_PROFIT_PERCENTAGE = 0.5; // 0.5% minimum profit
   private readonly GAS_ESTIMATE = 0.01; // Estimated gas in ETH
   private dexPriceService: DexPriceService;
+  private aaveService: AaveFlashLoanService;
 
-  constructor() {
+  constructor(provider: Provider, signer: Signer) {
     this.dexPriceService = new DexPriceService();
+    this.aaveService = new AaveFlashLoanService(
+      provider,
+      signer,
+      import.meta.env.VITE_AAVE_POOL_ADDRESS
+    );
   }
 
   async scanForOpportunities(pair: string): Promise<ArbitrageOpportunity[]> {
@@ -118,15 +126,13 @@ export class ArbitrageService {
     return Math.min(Math.max(Math.round(chance), 0), 100);
   }
 
-  async executeTrade(opportunity: ArbitrageOpportunity): Promise<boolean> {
-    // TODO: Implement actual trade execution
+  async executeTrade(opportunity: ArbitrageOpportunity): Promise<string> {
+    // TODO: Implement DEX trade execution
     console.log('Executing trade:', opportunity);
-    return true;
+    return "0x..."; // Return mock transaction hash
   }
 
-  async executeFlashLoan(opportunity: ArbitrageOpportunity): Promise<boolean> {
-    // TODO: Implement flash loan execution using Aave
-    console.log('Executing flash loan trade:', opportunity);
-    return true;
+  async executeFlashLoan(opportunity: ArbitrageOpportunity): Promise<string> {
+    return this.aaveService.executeFlashLoan(opportunity);
   }
 } 

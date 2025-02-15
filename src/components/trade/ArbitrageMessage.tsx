@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ArbitrageOpportunityCard } from "./ArbitrageOpportunityCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { TransactionReceipt } from "./TransactionReceipt";
 
 interface ArbitrageOpportunity {
   id: string;
@@ -23,8 +24,8 @@ interface ArbitrageOpportunity {
 interface ArbitrageMessageProps {
   opportunities: ArbitrageOpportunity[];
   isLoading?: boolean;
-  onTrade: (opportunity: ArbitrageOpportunity) => void;
-  onFlashLoan: (opportunity: ArbitrageOpportunity) => void;
+  onTrade: (opportunity: ArbitrageOpportunity) => Promise<string>;
+  onFlashLoan: (opportunity: ArbitrageOpportunity) => Promise<string>;
 }
 
 export function ArbitrageMessage({
@@ -34,11 +35,40 @@ export function ArbitrageMessage({
   onFlashLoan
 }: ArbitrageMessageProps) {
   const [executingId, setExecutingId] = useState<string | null>(null);
+  const [transaction, setTransaction] = useState<{
+    status: 'pending' | 'success' | 'error';
+    txHash?: string;
+    error?: string;
+    details: any;
+  } | null>(null);
 
   const handleTrade = async (opportunity: ArbitrageOpportunity) => {
     setExecutingId(opportunity.id);
+    setTransaction({
+      status: 'pending',
+      details: {
+        pair: opportunity.pair,
+        amount: opportunity.minAmount,
+        buyPrice: opportunity.buyFrom.price,
+        sellPrice: opportunity.sellAt.price,
+        estimatedProfit: opportunity.minAmount * (opportunity.profitPercentage / 100),
+        gas: opportunity.estimatedGas
+      }
+    });
+
     try {
-      await onTrade(opportunity);
+      const txHash = await onTrade(opportunity);
+      setTransaction(prev => ({
+        ...prev!,
+        status: 'success',
+        txHash
+      }));
+    } catch (error) {
+      setTransaction(prev => ({
+        ...prev!,
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Transaction failed'
+      }));
     } finally {
       setExecutingId(null);
     }
@@ -46,8 +76,31 @@ export function ArbitrageMessage({
 
   const handleFlashLoan = async (opportunity: ArbitrageOpportunity) => {
     setExecutingId(opportunity.id);
+    setTransaction({
+      status: 'pending',
+      details: {
+        pair: opportunity.pair,
+        amount: opportunity.minAmount,
+        buyPrice: opportunity.buyFrom.price,
+        sellPrice: opportunity.sellAt.price,
+        estimatedProfit: opportunity.minAmount * (opportunity.profitPercentage / 100),
+        gas: opportunity.estimatedGas
+      }
+    });
+
     try {
-      await onFlashLoan(opportunity);
+      const txHash = await onFlashLoan(opportunity);
+      setTransaction(prev => ({
+        ...prev!,
+        status: 'success',
+        txHash
+      }));
+    } catch (error) {
+      setTransaction(prev => ({
+        ...prev!,
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Flash loan failed'
+      }));
     } finally {
       setExecutingId(null);
     }
@@ -80,9 +133,17 @@ export function ArbitrageMessage({
 
   return (
     <div className="space-y-4">
+      {transaction && (
+        <TransactionReceipt
+          {...transaction}
+          onClose={() => setTransaction(null)}
+        />
+      )}
+      
       <div className="text-sm text-arbisent-text/60 mb-2">
         Found {opportunities.length} potential arbitrage opportunities:
       </div>
+      
       {opportunities.map((opportunity) => (
         <ArbitrageOpportunityCard
           key={opportunity.id}

@@ -1,5 +1,6 @@
 import { PriceService } from "../price/price.service";
 import { CoinGeckoService } from "../price/coingecko.service";
+import { AssetType } from "@/types/price-dashboard";
 
 interface DEXPrice {
   dex: string;
@@ -32,7 +33,7 @@ export class DexPriceService {
       const prices: DEXPrice[] = [];
 
       // Fetch base price from CoinGecko for reference
-      const assets = await this.priceService.getAssets(['CRYPTO', 'TOKEN']);
+      const assets = await this.priceService.getAssets([AssetType.CRYPTO, AssetType.TOKEN]);
       const baseAsset = assets.find(a => a.symbol === baseToken);
       if (!baseAsset) throw new Error(`Base token ${baseToken} not found`);
 
