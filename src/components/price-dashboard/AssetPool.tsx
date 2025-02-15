@@ -18,23 +18,29 @@ export const AssetPool = ({ onAssetsUpdate }: AssetPoolProps) => {
 
   useEffect(() => {
     const priceService = new PriceService({
+      coingeckoApiKey: import.meta.env.VITE_COINGECKO_API_KEY,
       cmcApiKey: import.meta.env.VITE_CMC_API_KEY,
       etherscanApiKey: import.meta.env.VITE_ETHERSCAN_API_KEY,
     });
 
     // Register all services
-    priceService.registerService(new CoinGeckoService());
+    priceService.registerService(new CoinGeckoService(import.meta.env.VITE_COINGECKO_API_KEY));
     priceService.registerService(new CMCService(import.meta.env.VITE_CMC_API_KEY));
     priceService.registerService(new DexPriceService(import.meta.env.VITE_ETHERSCAN_API_KEY));
 
     const fetchAssets = async () => {
-      const assets = await priceService.getAssets([
-        AssetType.CRYPTO,
-        AssetType.TOKEN,
-        AssetType.MEMECOIN,
-      ]);
-      setAllAssets(assets);
-      rotateAssets(assets);
+      try {
+        const assets = await priceService.getAssets([
+          AssetType.CRYPTO,
+          AssetType.TOKEN,
+          AssetType.MEMECOIN,
+        ]);
+        setAllAssets(assets);
+        rotateAssets(assets);
+      } catch (error) {
+        console.error("Failed to fetch assets:", error);
+        // Keep the existing assets if there's an error
+      }
     };
 
     // Initial fetch
