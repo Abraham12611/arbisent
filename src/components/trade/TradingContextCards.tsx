@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, Wallet, AlertTriangle } from "lucide-react";
 import { MarketAnalysisModal } from "./MarketAnalysisModal";
+import { PortfolioModal } from "./PortfolioModal";
 
 export const TradingContextCards = () => {
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
+  const [isPortfolioModalOpen, setIsPortfolioModalOpen] = useState(false);
 
   return (
     <>
@@ -21,7 +23,10 @@ export const TradingContextCards = () => {
             <p className="text-sm text-gray-500">Analyze current market conditions and trends</p>
           </CardContent>
         </Card>
-        <Card className="bg-[#151822]/50 border-gray-800 hover:border-gray-700 transition-colors cursor-pointer">
+        <Card 
+          className="bg-[#151822]/50 border-gray-800 hover:border-gray-700 transition-colors cursor-pointer"
+          onClick={() => setIsPortfolioModalOpen(true)}
+        >
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <Wallet className="h-5 w-5 text-yellow-500" />
@@ -44,6 +49,11 @@ export const TradingContextCards = () => {
       <MarketAnalysisModal 
         isOpen={isAnalysisModalOpen}
         onClose={() => setIsAnalysisModalOpen(false)}
+      />
+
+      <PortfolioModal
+        isOpen={isPortfolioModalOpen}
+        onClose={() => setIsPortfolioModalOpen(false)}
       />
     </>
   );
